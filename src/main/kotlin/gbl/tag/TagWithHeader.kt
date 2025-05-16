@@ -1,6 +1,4 @@
-package gbl.tag.type
-
-import gbl.tag.TagHeader
+package gbl.tag
 
 interface TagWithHeader {
     val tagHeader: TagHeader

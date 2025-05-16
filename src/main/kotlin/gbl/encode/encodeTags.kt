@@ -4,6 +4,7 @@ import gbl.GblParser.Companion.TAG_ID_SIZE
 import gbl.GblParser.Companion.TAG_LENGTH_SIZE
 import gbl.tag.Tag
 import gbl.tag.TagHeader
+import gbl.tag.TagWithHeader
 import gbl.tag.type.*
 import gbl.tag.type.application.GblApplication
 import gbl.tag.type.certificate.GblCertificateEcdsaP256

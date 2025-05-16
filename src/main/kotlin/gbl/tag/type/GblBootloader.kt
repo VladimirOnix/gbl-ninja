@@ -3,6 +3,7 @@ package gbl.tag.type
 import parser.data.tag.GblType
 import gbl.tag.TagHeader
 import gbl.tag.Tag
+import gbl.tag.TagWithHeader
 
 data class GblBootloader(
     override val tagHeader: TagHeader,

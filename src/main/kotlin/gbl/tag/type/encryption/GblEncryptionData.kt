@@ -3,7 +3,7 @@ package gbl.tag.type.encryption
 import parser.data.tag.GblType
 import gbl.tag.TagHeader
 import gbl.tag.Tag
-import gbl.tag.type.TagWithHeader
+import gbl.tag.TagWithHeader
 
 data class GblEncryptionData(
     override val tagHeader: TagHeader,
