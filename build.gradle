@@ -1,0 +1,52 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.1.20'
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+application {
+    mainClass = 'org.example.MainKt' // Modify this to your actual main class
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass,
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('release') {
+    dependsOn clean, jar
+    description = 'Cleans the project and builds a release JAR'
+    group = 'build'
+}
+
+build.dependsOn jar

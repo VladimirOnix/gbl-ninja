@@ -1,0 +1,167 @@
+image:
+  name: alvrme/alpine-android:android-34-jdk17
+
+stages:
+  - assembleDebug
+  - assembleStaging
+  - assembleJar      # New stage for JAR creation
+  - changelogDev
+  - changelogRelease
+  - deployStageDev
+  - deployStageRelease
+  - lintCompose
+  - sonar
+  - sonarqubeMRDecoration
+
+sonarqube-pr-decoration:
+  stage: sonarqubeMRDecoration
+  only:
+    - dev
+    - merge_request
+  script:
+    - echo sonar.pullrequest.key=$CI_MERGE_REQUEST_IID >> sonar-project.properties
+    - echo sonar.pullrequest.branch=$CI_MERGE_REQUEST_BRANCH_NAME >> sonar-project.properties
+
+
+assembleDebug:
+  interruptible: true
+  stage: assembleDebug
+  only:
+    - dev
+    - merge_request
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew :app:assembleDebug
+
+lintDebugCompose:
+  interruptible: true
+  stage: lintCompose
+  only:
+    - staging
+    - release
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew :app:lintRelease
+
+assembleStaging:
+  interruptible: true
+  stage: assembleStaging
+  only:
+    - staging
+    - release
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew :app:assembleRelease
+  artifacts:
+    expire_in: 1 week
+    name: "release$(date +\"%Y-%m-%d_%H-%M\")"
+    paths:
+      - app/build/outputs/apk/release/
+
+# New job for creating JAR file
+assembleJar:
+  interruptible: true
+  stage: assembleJar
+  only:
+    - staging
+    - release
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew release  # The custom release task we defined in build.gradle
+  artifacts:
+    expire_in: 1 week
+    name: "jar-release-$(date +\"%Y-%m-%d_%H-%M\")"
+    paths:
+      - build/libs/*.jar  # Path to the generated JAR file
+
+changelogDev:
+  stage: changelogDev
+  only:
+    - staging
+  image:
+    name: orhunp/git-cliff:latest
+    entrypoint: [ "" ]
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  script:
+    - cat $GIT_CLIFF_DEV_CONFIG > cliff-dev.toml
+    - git-cliff -c cliff-dev.toml --latest -r . > cliff.txt
+    - cat cliff.txt | head -n -2 > catlog.txt
+    - awk '!x[$0]++' catlog.txt > CHANGELOG.txt
+    - cat CHANGELOG.txt
+  artifacts:
+    paths:
+      - CHANGELOG.txt
+
+changelogRelease:
+  stage: changelogRelease
+  only:
+    - release
+  image:
+    name: orhunp/git-cliff:latest
+    entrypoint: [ "" ]
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  script:
+    - cat $GIT_CLIFF_RELEASE_CONFIG > cliff-release.toml
+    - git-cliff -c cliff-release.toml --latest -r . > cliff.txt
+    - cat cliff.txt | head -n -2 > catlog.txt
+    - awk '!x[$0]++' catlog.txt > CHANGELOG.txt
+    - cat CHANGELOG.txt
+  artifacts:
+    paths:
+      - CHANGELOG.txt
+
+deployStageDev:
+  stage: deployStageDev
+  image:
+    name: andreysenov/firebase-tools
+  only:
+    - staging
+  dependencies:
+    - changelogDev
+    - assembleStaging
+    - assembleJar  # Adding dependency on the JAR job
+  script:
+    - firebase appdistribution:distribute ./app/build/outputs/apk/release/app-arm64-v8a-release.apk --app $FIREBASE_APP_ID
+      --groups "woc_testing"
+      --token "$FIREBASE_TOKEN"
+      --release-notes "DEV BUILD\n\n$(cat CHANGELOG.txt)"
+
+deployStageRelease:
+  stage: deployStageRelease
+  image:
+    name: andreysenov/firebase-tools
+  only:
+    - release
+  dependencies:
+    - changelogRelease
+    - assembleStaging
+    - assembleJar  # Adding dependency on the JAR job
+  script:
+    - firebase appdistribution:distribute ./app/build/outputs/apk/release/app-arm64-v8a-release.apk --app $FIREBASE_APP_ID
+      --groups "woc_testing"
+      --token "$FIREBASE_TOKEN"
+      --release-notes "RELEASE BUILD\n\n$(cat CHANGELOG.txt)"
+
+sonarqube-check:
+  stage: sonar
+  only:
+    - dev
+    - merge_requests
+    - main
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [ "" ]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner
+  allow_failure: true

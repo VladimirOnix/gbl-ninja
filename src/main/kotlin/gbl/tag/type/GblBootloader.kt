@@ -1,0 +1,25 @@
+package parser.data.tag.type
+
+import parser.data.tag.GblType
+import parser.data.tag.TagHeader
+import gbl.tag.Tag
+
+data class GblBootloader(
+    override val tagHeader: TagHeader,
+    override val tagType: GblType,
+    val bootloaderVersion: UInt,
+    val address: UInt,
+    val data: ByteArray,
+    override val tagData: ByteArray
+): Tag, TagWithHeader {
+    override fun copy(): Tag {
+        return GblBootloader(
+            tagHeader = tagHeader,
+            tagType = tagType,
+            bootloaderVersion = bootloaderVersion,
+            address = address,
+            data = data,
+            tagData = arrayOf<Byte>().toByteArray()
+        )
+    }
+}
