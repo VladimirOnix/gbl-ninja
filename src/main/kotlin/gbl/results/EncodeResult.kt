@@ -1,4 +1,4 @@
-package parser.data.results
+package gbl.results
 
 sealed class EncodeResult {
     data class Success(
@@ -8,7 +8,7 @@ sealed class EncodeResult {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
 
-            other as EncodeResult.Success
+            other as Success
 
             return byteArray.contentEquals(other.byteArray)
         }

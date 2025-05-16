@@ -1,16 +1,24 @@
 package gbl
 
-import parser.data.encode.createEndTagWithCrc
-import parser.data.encode.encodeTags
+import gbl.encode.createEndTagWithCrc
+import gbl.encode.encodeTags
 import parser.data.parse.parseTag
 import parser.data.parse.parseTagType
-import parser.data.results.ParseResult
+import gbl.results.ParseResult
 import gbl.results.ParseTagResult
 import parser.data.tag.GblType
 import gbl.tag.Tag
-import parser.data.tag.DefaultTag
-import parser.data.tag.TagHeader
-import parser.data.tag.type.*
+import gbl.tag.type.GblBootloader
+import gbl.tag.type.GblEnd
+import gbl.tag.type.GblEraseProg
+import gbl.tag.type.GblHeader
+import gbl.tag.type.GblMetadata
+import gbl.tag.type.GblProg
+import gbl.tag.type.GblProgLz4
+import gbl.tag.type.GblProgLzma
+import gbl.tag.type.GblSeUpgrade
+import gbl.tag.DefaultTag
+import gbl.tag.TagHeader
 import gbl.tag.type.application.ApplicationData
 import gbl.tag.type.application.GblApplication
 import gbl.tag.type.certificate.ApplicationCertificate
@@ -30,7 +38,7 @@ class GblParser {
         const val HEADER_GBL_TYPE = 0U
     }
 
-    fun parseHexEncodedFile(byteArray: ByteArray): ParseResult {
+    fun parseFile(byteArray: ByteArray): ParseResult {
         var offset = 0
         val size = byteArray.size
         val rawTags: MutableList<Tag> = mutableListOf()
@@ -61,7 +69,7 @@ class GblParser {
 
                         offset += TAG_ID_SIZE + TAG_LENGTH_SIZE + header.length.toInt()
                     } catch (e: Exception) {
-                        println("Помилка при розборі типу тега: ${e.message}")
+
                         break
                     }
                 }

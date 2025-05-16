@@ -1,6 +1,6 @@
 package gbl.tag
 
-import parser.data.encode.generateTagData
+import gbl.encode.generateTagData
 import parser.data.tag.GblType
 
 interface Tag {

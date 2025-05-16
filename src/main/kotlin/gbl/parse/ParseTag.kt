@@ -3,8 +3,8 @@ package parser.data.parse
 import gbl.GblParser.Companion.TAG_ID_SIZE
 import gbl.GblParser.Companion.TAG_LENGTH_SIZE
 import gbl.results.ParseTagResult
-import parser.data.tag.TagHeader
-import parser.data.utils.getFromBytes
+import gbl.tag.TagHeader
+import gbl.utils.getIntFromBytes
 
 fun parseTag(
     byteArray: ByteArray,
@@ -14,9 +14,9 @@ fun parseTag(
         return ParseTagResult.Fatal("Invalid offset: $offset")
     }
 
-    val tagId = getFromBytes(byteArray, offset = offset, length = TAG_ID_SIZE).int
+    val tagId = getIntFromBytes(byteArray, offset = offset, length = TAG_ID_SIZE)
 
-    val tagLength = getFromBytes(byteArray, offset = offset + TAG_ID_SIZE, length = TAG_LENGTH_SIZE).int
+    val tagLength = getIntFromBytes(byteArray, offset = offset + TAG_ID_SIZE, length = TAG_LENGTH_SIZE).toInt()
 
     if (offset + TAG_ID_SIZE + TAG_LENGTH_SIZE + tagLength > byteArray.size) {
         return ParseTagResult.Fatal("Invalid tag length: $tagLength")
@@ -28,7 +28,7 @@ fun parseTag(
     )
 
     val tagHeader = TagHeader(
-        id = tagId.toUInt(),
+        id = tagId,
         length = tagLength.toUInt()
     )
 

@@ -1,4 +1,4 @@
-package parser.data.results
+package gbl.results
 
 import gbl.tag.Tag
 

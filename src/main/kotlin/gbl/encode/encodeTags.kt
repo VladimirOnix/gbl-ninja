@@ -1,12 +1,17 @@
-package parser.data.encode
+package gbl.encode
 
 import gbl.GblParser.Companion.TAG_ID_SIZE
 import gbl.GblParser.Companion.TAG_LENGTH_SIZE
-import parser.data.tag.GblType
 import gbl.tag.Tag
-import parser.data.tag.TagHeader
-import parser.data.tag.type.*
+import gbl.tag.TagHeader
+import gbl.tag.type.*
 import gbl.tag.type.application.GblApplication
+import gbl.tag.type.certificate.GblCertificateEcdsaP256
+import gbl.tag.type.certificate.GblSignatureEcdsaP256
+import gbl.tag.type.encryption.GblEncryptionData
+import gbl.tag.type.encryption.GblEncryptionInitAesCcm
+import gbl.tag.type.version.GblVersionDependency
+import parser.data.tag.GblType
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.CRC32
@@ -17,8 +22,9 @@ internal fun encodeTags(tags: List<Tag>): ByteArray {
     buffer.order(ByteOrder.LITTLE_ENDIAN)
 
     for (tag in tags) {
-        buffer.putInt(tag.tagHeader.id.toInt())
+        if (tag !is TagWithHeader) continue
 
+        buffer.putInt(tag.tagHeader.id.toInt())
         buffer.putInt(tag.tagHeader.length.toInt())
 
         val tagData = generateTagData(tag)
@@ -106,17 +112,73 @@ fun generateTagData(tag: Tag): ByteArray {
             tag.tagData
         }
 
-         is GblTagDelta -> {
-             tag.tagData
-         }
+        is GblTagDelta -> {
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(tag.newCrc.toInt())
+                .putInt(tag.newSize.toInt())
+                .putInt(tag.flashAddr.toInt())
 
+            buffer.put(tag.data)
+            buffer.array()
+        }
 
+        is GblCertificateEcdsaP256 -> {
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.certificate.structVersion.toByte())
+                .put(tag.certificate.flags.toByte())
+                .put(tag.certificate.key.toByte())
+                .putInt(tag.certificate.version.toInt())
+                .put(tag.certificate.signature.toByte())
+
+            buffer.array()
+        }
+
+        is GblSignatureEcdsaP256 -> {
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.r.toByte())
+                .put(tag.s.toByte())
+
+            buffer.array()
+        }
+
+        is GblEncryptionData -> {
+            tag.encryptedGblData
+        }
+
+        is GblEncryptionInitAesCcm -> {
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(tag.msgLen.toInt())
+                .put(tag.nonce.toByte())
+
+            buffer.array()
+        }
+
+        is GblVersionDependency -> {
+            val buffer = ByteBuffer.allocate(8)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(tag.imageType.value.toInt())
+                .put(tag.statement.toByte())
+                .putShort(tag.reversed.toShort())
+                .putInt(tag.version.toInt())
+
+            buffer.array()
+        }
+
+        else -> ByteArray(0)
     }
 }
 
 private fun calculateTotalSize(tags: List<Tag>): Int {
     return tags.sumOf { tag ->
-        TAG_ID_SIZE + TAG_LENGTH_SIZE + tag.tagHeader.length.toInt()
+        if (tag is TagWithHeader) {
+            TAG_ID_SIZE + TAG_LENGTH_SIZE + tag.tagHeader.length.toInt()
+        } else {
+            0
+        }
     }
 }
 
@@ -124,7 +186,11 @@ fun encodeTagsWithCrc(tags: List<Tag>, includeCrc: Boolean = false): ByteArray {
     val crcSize = if (includeCrc) 4 else 0
 
     val totalSize = tags.sumOf { tag ->
-        TAG_ID_SIZE + TAG_LENGTH_SIZE + tag.tagHeader.length.toInt() + crcSize
+        if (tag is TagWithHeader) {
+            TAG_ID_SIZE + TAG_LENGTH_SIZE + tag.tagHeader.length.toInt() + crcSize
+        } else {
+            0
+        }
     }
 
     val buffer = ByteBuffer.allocate(totalSize)
@@ -133,41 +199,43 @@ fun encodeTagsWithCrc(tags: List<Tag>, includeCrc: Boolean = false): ByteArray {
     val fileCrc = CRC32()
 
     for (tag in tags) {
-        val tagIdBytes = ByteBuffer.allocate(4)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(tag.tagHeader.id.toInt())
-            .array()
+        if (tag is TagWithHeader) {
+            val tagIdBytes = ByteBuffer.allocate(4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(tag.tagHeader.id.toInt())
+                .array()
 
-        val tagLengthBytes = ByteBuffer.allocate(4)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(tag.tagHeader.length.toInt())
-            .array()
+            val tagLengthBytes = ByteBuffer.allocate(4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(tag.tagHeader.length.toInt())
+                .array()
 
-        val tagData = generateTagData(tag)
+            val tagData = generateTagData(tag)
 
-        if (includeCrc) {
-            val crc = CRC32()
-            crc.update(tagIdBytes)
-            crc.update(tagLengthBytes)
-            crc.update(tagData)
+            if (includeCrc) {
+                val crc = CRC32()
+                crc.update(tagIdBytes)
+                crc.update(tagLengthBytes)
+                crc.update(tagData)
 
-            fileCrc.update(tagIdBytes)
-            fileCrc.update(tagLengthBytes)
-            fileCrc.update(tagData)
+                fileCrc.update(tagIdBytes)
+                fileCrc.update(tagLengthBytes)
+                fileCrc.update(tagData)
 
-            buffer.put(tagIdBytes)
-            buffer.put(tagLengthBytes)
-            buffer.put(tagData)
+                buffer.put(tagIdBytes)
+                buffer.put(tagLengthBytes)
+                buffer.put(tagData)
 
-            buffer.putInt(crc.value.toInt())
-        } else {
-            buffer.put(tagIdBytes)
-            buffer.put(tagLengthBytes)
-            buffer.put(tagData)
+                buffer.putInt(crc.value.toInt())
+            } else {
+                buffer.put(tagIdBytes)
+                buffer.put(tagLengthBytes)
+                buffer.put(tagData)
 
-            fileCrc.update(tagIdBytes)
-            fileCrc.update(tagLengthBytes)
-            fileCrc.update(tagData)
+                fileCrc.update(tagIdBytes)
+                fileCrc.update(tagLengthBytes)
+                fileCrc.update(tagData)
+            }
         }
     }
 
@@ -176,7 +244,11 @@ fun encodeTagsWithCrc(tags: List<Tag>, includeCrc: Boolean = false): ByteArray {
         if (endTagIndex != -1) {
             val endTag = tags[endTagIndex] as GblEnd
             val endTagPosition = tags.subList(0, endTagIndex).sumOf {
-                TAG_ID_SIZE + TAG_LENGTH_SIZE + it.tagHeader.length.toInt()
+                if (it is TagWithHeader) {
+                    TAG_ID_SIZE + TAG_LENGTH_SIZE + it.tagHeader.length.toInt()
+                } else {
+                    0
+                }
             }
 
             val crcPosition = endTagPosition + TAG_ID_SIZE + TAG_LENGTH_SIZE
@@ -193,6 +265,8 @@ fun createEndTagWithCrc(tags: List<Tag>): GblEnd {
     val crc = CRC32()
 
     for (tag in tags) {
+        if (tag !is TagWithHeader) continue
+
         val tagIdBytes = ByteBuffer.allocate(4)
             .order(ByteOrder.LITTLE_ENDIAN)
             .putInt(tag.tagHeader.id.toInt())

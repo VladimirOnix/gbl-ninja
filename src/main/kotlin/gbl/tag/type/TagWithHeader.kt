@@ -1,6 +1,6 @@
-package parser.data.tag.type
+package gbl.tag.type
 
-import parser.data.tag.TagHeader
+import gbl.tag.TagHeader
 
 interface TagWithHeader {
     val tagHeader: TagHeader

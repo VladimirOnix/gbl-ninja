@@ -1,6 +1,6 @@
 package gbl.results
 
-import parser.data.tag.TagHeader
+import gbl.tag.TagHeader
 
 sealed class ParseTagResult {
     data class Success(

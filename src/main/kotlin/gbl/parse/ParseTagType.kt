@@ -1,26 +1,26 @@
 package parser.data.parse
 
 import gbl.tag.type.application.ApplicationData
-import parser.data.tag.DefaultTag
-import parser.data.tag.TagHeader
+import gbl.tag.DefaultTag
+import gbl.tag.TagHeader
 import gbl.tag.Tag
 import gbl.tag.type.application.GblApplication
-import parser.data.tag.type.GblBootloader
-import parser.data.tag.type.GblEnd
-import parser.data.tag.type.GblEraseProg
-import parser.data.tag.type.GblHeader
-import parser.data.tag.type.GblMetadata
-import parser.data.tag.type.GblProg
-import parser.data.tag.type.GblProgLz4
-import parser.data.tag.type.GblProgLzma
-import parser.data.tag.type.GblSeUpgrade
+import gbl.tag.type.GblBootloader
+import gbl.tag.type.GblEnd
+import gbl.tag.type.GblEraseProg
+import gbl.tag.type.GblHeader
+import gbl.tag.type.GblMetadata
+import gbl.tag.type.GblProg
+import gbl.tag.type.GblProgLz4
+import gbl.tag.type.GblProgLzma
+import gbl.tag.type.GblSeUpgrade
 import parser.data.tag.GblType
 import gbl.tag.type.certificate.ApplicationCertificate
 import gbl.tag.type.certificate.GblCertificateEcdsaP256
 import gbl.tag.type.certificate.GblSignatureEcdsaP256
 import gbl.tag.type.encryption.GblEncryptionData
 import gbl.tag.type.encryption.GblEncryptionInitAesCcm
-import parser.data.utils.getFromBytes
+import gbl.utils.getIntFromBytes
 
 fun parseTagType(
     tagId: UInt,
@@ -37,8 +37,8 @@ fun parseTagType(
 
     return when(tagType) {
         GblType.HEADER_V3 -> {
-            val version = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt()
-            val gblType = getFromBytes(byteArray, offset = 4, length = 4).int.toUInt()
+            val version = getIntFromBytes(byteArray, offset = 0, length = 4)
+            val gblType = getIntFromBytes(byteArray, offset = 4, length = 4)
 
             GblHeader(
                 tagHeader = tagHeader,
@@ -52,17 +52,17 @@ fun parseTagType(
             GblBootloader(
                 tagHeader = tagHeader,
                 tagType = tagType,
-                bootloaderVersion = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt(),
-                address = getFromBytes(byteArray, offset = 4, length = 4).int.toUInt(),
+                bootloaderVersion = getIntFromBytes(byteArray, offset = 0, length = 4),
+                address = getIntFromBytes(byteArray, offset = 4, length = 4),
                 data = byteArray.copyOfRange(8, byteArray.size),
                 tagData = byteArray
             )
         }
         GblType.APPLICATION -> {
             val appData = ApplicationData(
-                type = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt(),
-                version = getFromBytes(byteArray, offset = 4, length = 4).int.toUInt(),
-                capabilities = getFromBytes(byteArray, offset = 8, length = 4).int.toUInt(),
+                type = getIntFromBytes(byteArray, offset = 0, length = 4),
+                version = getIntFromBytes(byteArray, offset = 4, length = 4),
+                capabilities = getIntFromBytes(byteArray, offset = 8, length = 4),
                 productId = byteArray[12].toUByte(),
             )
 
@@ -85,7 +85,7 @@ fun parseTagType(
             GblProg(
                 tagHeader = tagHeader,
                 tagType = tagType,
-                flashStartAddress = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt(),
+                flashStartAddress = getIntFromBytes(byteArray, offset = 0, length = 4),
                 data = byteArray.copyOfRange(4, byteArray.size),
                 tagData = byteArray,
             )
@@ -115,8 +115,8 @@ fun parseTagType(
             GblSeUpgrade(
                 tagHeader = tagHeader,
                 tagType = tagType,
-                blobSize = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt(),
-                version = getFromBytes(byteArray, offset = 4, length = 4).int.toUInt(),
+                blobSize = getIntFromBytes(byteArray, offset = 0, length = 4),
+                version = getIntFromBytes(byteArray, offset = 4, length = 4),
                 data = byteArray.copyOfRange(8, byteArray.size),
                 tagData = byteArray,
             )
@@ -125,7 +125,7 @@ fun parseTagType(
             GblEnd(
                 tagHeader = tagHeader,
                 tagType = tagType,
-                gblCrc = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt(),
+                gblCrc = getIntFromBytes(byteArray, offset = 0, length = 4),
                 tagData = byteArray,
             )
         }
@@ -142,7 +142,7 @@ fun parseTagType(
                 tagHeader = tagHeader,
                 tagType = tagType,
                 tagData = byteArray,
-                msgLen = getFromBytes(byteArray, offset = 0, length = 4).int.toUInt(),
+                msgLen = getIntFromBytes(byteArray, offset = 0, length = 4),
                 nonce = byteArray.get(4).toUByte(),
             )
         }
@@ -160,7 +160,7 @@ fun parseTagType(
                 structVersion = byteArray[0].toUByte(),
                 flags = byteArray[1].toUByte(),
                 key = byteArray[2].toUByte(),
-                version = getFromBytes(byteArray, offset = 3, length = 4).int.toUInt(),
+                version = getIntFromBytes(byteArray, offset = 3, length = 4),
                 signature = byteArray[7].toUByte(),
             )
 

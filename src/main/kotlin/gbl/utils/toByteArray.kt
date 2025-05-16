@@ -1,4 +1,4 @@
-package parser.data.utils
+package gbl.utils
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
