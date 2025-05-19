@@ -1,4 +1,4 @@
-name: Build JAR
+name: Build JAR and Upload
 
 on:
   push:
@@ -27,3 +27,9 @@ jobs:
 
       - name: Build JAR
         run: ./gradlew jar
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-jar
+          path: build/libs/*.jar
