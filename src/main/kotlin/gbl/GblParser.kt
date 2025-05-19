@@ -2,23 +2,12 @@ package gbl
 
 import gbl.encode.createEndTagWithCrc
 import gbl.encode.encodeTags
-import parser.data.parse.parseTag
-import parser.data.parse.parseTagType
 import gbl.results.ParseResult
 import gbl.results.ParseTagResult
-import parser.data.tag.GblType
-import gbl.tag.Tag
-import gbl.tag.type.GblBootloader
-import gbl.tag.type.GblEnd
-import gbl.tag.type.GblEraseProg
-import gbl.tag.type.GblHeader
-import gbl.tag.type.GblMetadata
-import gbl.tag.type.GblProg
-import gbl.tag.type.GblProgLz4
-import gbl.tag.type.GblProgLzma
-import gbl.tag.type.GblSeUpgrade
 import gbl.tag.DefaultTag
+import gbl.tag.Tag
 import gbl.tag.TagHeader
+import gbl.tag.type.*
 import gbl.tag.type.application.ApplicationData
 import gbl.tag.type.application.GblApplication
 import gbl.tag.type.certificate.ApplicationCertificate
@@ -26,6 +15,10 @@ import gbl.tag.type.certificate.GblCertificateEcdsaP256
 import gbl.tag.type.certificate.GblSignatureEcdsaP256
 import gbl.tag.type.encryption.GblEncryptionData
 import gbl.tag.type.encryption.GblEncryptionInitAesCcm
+import gbl.utils.putUIntToByteArray
+import parser.data.parse.parseTag
+import parser.data.parse.parseTagType
+import parser.data.tag.GblType
 
 class GblParser {
     companion object {
@@ -341,7 +334,7 @@ class GblParser {
                 tagData = ByteArray(0)
             )
 
-            val tagData = metaData.copyOf()
+            val tagData = tag.generateData()
 
             val metadata = tag.copy(
                 tagData = tagData
@@ -414,7 +407,7 @@ class GblParser {
             val gblType = GblType.PROG_LZMA
 
             val tagDataSize =
-                8U + compressedData.size.toUInt() // 4 bytes for address + 4 bytes for decompressed size + compressed data
+                8U + compressedData.size.toUInt()
 
             val tag = GblProgLzma(
                 tagHeader = TagHeader(
@@ -593,13 +586,10 @@ class GblParser {
         ): ByteArray {
             val result = ByteArray(8 + compressedData.size)
 
-            // Put flashStartAddress (4 bytes)
             putUIntToByteArray(result, 0, flashStartAddress)
 
-            // Put decompressedSize (4 bytes)
             putUIntToByteArray(result, 4, decompressedSize)
 
-            // Put compressed data
             compressedData.copyInto(result, 8)
 
             return result
@@ -612,7 +602,6 @@ class GblParser {
         ): ByteArray {
             val result = ByteArray(8 + data.size)
 
-            // Put blobSize (4 bytes)
             putUIntToByteArray(result, 0, blobSize)
 
             putUIntToByteArray(result, 4, version)
@@ -620,13 +609,6 @@ class GblParser {
             data.copyInto(result, 8)
 
             return result
-        }
-
-        private fun putUIntToByteArray(array: ByteArray, offset: Int, value: UInt) {
-            array[offset] = (value and 0xFFU).toByte()
-            array[offset + 1] = ((value shr 8) and 0xFFU).toByte()
-            array[offset + 2] = ((value shr 16) and 0xFFU).toByte()
-            array[offset + 3] = ((value shr 24) and 0xFFU).toByte()
         }
     }
 }
