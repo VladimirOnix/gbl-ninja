@@ -46,7 +46,7 @@ jobs:
       - name: Upload Debug artifact
         uses: actions/upload-artifact@v3
         with:
-          name: debug-jar-${{ github.sha::8 }}
+          name: debug-jar-${{ github.sha.substring(0, 8) }}
           path: build/libs/*.jar
 
   build_release:
@@ -83,7 +83,7 @@ jobs:
       - name: Upload Release artifact
         uses: actions/upload-artifact@v3
         with:
-          name: release-jar-${{ github.sha::8 }}
+          name: release-jar-${{ github.sha.substring(0, 8) }}
           path: build/libs/*.jar
 
   test:
