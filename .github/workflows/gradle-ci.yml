@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build JAR
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - dev
 
 jobs:
-  build-release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,20 +22,8 @@ jobs:
           distribution: 'temurin'
           java-version: 21
 
-      - name: Grant execute permission for Gradle
+      - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Run release task
-        run: ./gradlew release
-
-      - name: Find built JAR
-        id: find_jar
-        run: |
-          JAR_PATH=$(find build/libs -name "*.jar" | head -n 1)
-          echo "jar_file=$JAR_PATH" >> "$GITHUB_OUTPUT"
-
-      - name: Upload release JAR as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-jar
-          path: ${{ steps.find_jar.outputs.jar_file }}
+      - name: Build JAR
+        run: ./gradlew jar
