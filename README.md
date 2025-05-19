@@ -22,7 +22,7 @@
 Add the dependency to your `build.gradle`:
 
 ```groovy
-implementation(files("libs/gbl-1.0.0.aar"))
+implementation(files("libs/GblCommander-1.0.jar"))
 ```
 
 ---
