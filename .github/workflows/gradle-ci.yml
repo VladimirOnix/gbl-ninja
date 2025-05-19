@@ -1,4 +1,4 @@
-name: Build JAR and Upload
+name: Build JAR and Release
 
 on:
   push:
@@ -28,8 +28,16 @@ jobs:
       - name: Build JAR
         run: ./gradlew jar
 
-      - name: Upload JAR artifact
+      - name: Upload JAR to workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-jar
           path: build/libs/*.jar
+
+      - name: Create GitHub Release and upload JAR
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
