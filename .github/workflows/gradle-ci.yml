@@ -28,7 +28,7 @@ jobs:
         run: ./gradlew release
 
       - name: Upload Release artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-jar-${{ github.sha }}
           path: build/libs/*.jar
