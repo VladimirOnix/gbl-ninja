@@ -5,6 +5,7 @@ import gbl.GblParser.Companion.TAG_LENGTH_SIZE
 import gbl.results.ParseTagResult
 import gbl.tag.TagHeader
 import gbl.utils.getIntFromBytes
+import kotlin.toULong
 
 fun parseTag(
     byteArray: ByteArray,
@@ -14,9 +15,9 @@ fun parseTag(
         return ParseTagResult.Fatal("Invalid offset: $offset")
     }
 
-    val tagId = getIntFromBytes(byteArray, offset = offset, length = TAG_ID_SIZE)
+    val tagId = getIntFromBytes(byteArray, offset = offset, length = TAG_ID_SIZE).int.toUInt()
 
-    val tagLength = getIntFromBytes(byteArray, offset = offset + TAG_ID_SIZE, length = TAG_LENGTH_SIZE).toInt()
+    val tagLength = getIntFromBytes(byteArray, offset = offset + TAG_ID_SIZE, length = TAG_LENGTH_SIZE).int
 
     if (offset + TAG_ID_SIZE + TAG_LENGTH_SIZE + tagLength > byteArray.size) {
         return ParseTagResult.Fatal("Invalid tag length: $tagLength")

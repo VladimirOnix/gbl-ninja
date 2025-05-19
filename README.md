@@ -17,6 +17,32 @@
 
 ---
 
+## 📘 GBL Format Overview
+The GBL format is a container format designed by Silicon Labs for firmware updates. It consists of a sequence of tags, where each tag serves a specific purpose in the update process.
+* Basic Structure
+
+Each GBL file is composed of multiple tags in sequence
+Every tag has a Tag ID (4 bytes), Length field (4 bytes), and Data (variable length)
+The file always ends with an END tag containing a CRC checksum
+
+* Key Features
+
+Modular design: Different tag types for different purposes
+Compression support: LZ4 and LZMA compression options
+Security: Signature verification and encryption capabilities
+Versioning: Version dependency checks for safe updates
+Multiple update types: Application, bootloader, and secure element updates
+
+* File Processing Flow
+
+Bootloader reads the header tag
+Tags are processed sequentially
+Verification occurs (signatures, CRC)
+Flash operations are performed according to tag commands
+Device resets after successful update
+
+---
+
 ## 🛠️ Installation
 
 Add the dependency to your `build.gradle`:
@@ -34,14 +60,11 @@ implementation(files("libs/GblCommander-1.0.jar"))
 ```kotlin
 import parser.GblParser
 
-// Create a parser instance
 val gblParser = GblParser()
 
-// Read and parse the file
 val byteArray = readFileAsByteArray("firmware.gbl")
 val parseResult = gblParser.parse(byteArray)
 
-// Handle the result
 when (parseResult) {
     is ParseResult.Success -> {
         val tags = parseResult.tags
@@ -62,12 +85,10 @@ import parser.data.encode.encodeTags
 import parser.data.encode.encodeTagsWithEndTag
 import parser.data.tag.TagInterface
 
-// Assume you have a list of tags (either parsed or manually created)
-val tags: List<TagInterface> = ...
+val tags: List<Tag> = ...
 
 val gblBytes = encode(tags)
 
-// Write to file
 writeByteArrayToFile(gblBytesWithEnd, "new_firmware.gbl")
 ```
 
@@ -82,7 +103,6 @@ if (parseResult is ParseResult.Success) {
     if (bootloaderTagIndex != -1) {
         val bootloaderTag = tags[bootloaderTagIndex] as GblBootloader
 
-        // Modify the version
         val modifiedTag = bootloaderTag.copy(bootloaderVersion = 0x20000u)
         tags[bootloaderTagIndex] = modifiedTag
     }
@@ -96,18 +116,22 @@ if (parseResult is ParseResult.Success) {
 
 ## 📚 Supported Tag Types
 
-| Tag Type    | Description                      |
-| ----------- | -------------------------------- |
-| HEADER\_V3  | GBL file header (version 3)      |
-| BOOTLOADER  | Bootloader information           |
-| APPLICATION | Application data                 |
-| METADATA    | File metadata                    |
-| PROG        | Raw programming data             |
-| PROG\_LZ4   | LZ4-compressed programming data  |
-| PROG\_LZMA  | LZMA-compressed programming data |
-| ERASEPROG   | Memory erase command             |
-| SE\_UPGRADE | SE upgrade information           |
-| END         | Final tag with CRC               |
+| Tag Type              | Description                      |
+|------------------ ----| -------------------------------- |
+| HEADER\_V3            | GBL file header (version 3)      |
+| BOOTLOADER            | Bootloader information           |
+| APPLICATION           | Application data                 |
+| METADATA              | File metadata                    |
+| PROG                  | Raw programming data             |
+| PROG\_LZ4             | LZ4-compressed programming data  |
+| PROG\_LZMA            | LZMA-compressed programming data |
+| ERASEPROG             | Memory erase command             |
+| VERSION_DEPENDENCY    |                                  |
+| ENCRYPTION_DATA       |                                  |
+| ENCRYPTION_INIT       |                                  |
+| SIGNATURE_ECDSA_P256  |                                  |
+| SE\_UPGRADE           | SE upgrade information           |
+| END                   | Final tag with CRC               |
 
 ---
 
@@ -128,20 +152,17 @@ The final tag in the file must always be an **END** tag, which contains a CRC fo
 ### Core Interfaces and Classes
 
 ```kotlin
-// Main interface for all tags
 interface TagInterface {
     val tagHeader: TagHeader
     val tagType: GblType
     val tagData: ByteArray
 }
 
-// Tag header structure
 data class TagHeader(
     val id: UInt,
     val length: UInt
 )
 
-// Parsing result
 sealed class ParseResult {
     data class Success(val tags: List<TagInterface>) : ParseResult()
     object Fatal : ParseResult()
@@ -151,7 +172,6 @@ sealed class ParseResult {
 ### Byte Utilities
 
 ```kotlin
-// Read values from a byte array in little-endian order
 fun getFromBytes(byteArray: ByteArray, offset: Int = 0, length: Int = 4): ByteBuffer
 ```
 
@@ -168,7 +188,7 @@ fun getFromBytes(byteArray: ByteArray, offset: Int = 0, length: Int = 4): ByteBu
 
 ```kotlin
 val parser = GblParser()
-val result = parser.parseHexEncodedFile(fileBytes)
+val result = parser.parse(fileBytes)
 
 if (result is ParseResult.Success) {
     result.tags.forEach { tag ->

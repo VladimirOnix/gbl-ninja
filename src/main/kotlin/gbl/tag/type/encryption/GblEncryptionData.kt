@@ -1,6 +1,6 @@
 package gbl.tag.type.encryption
 
-import parser.data.tag.GblType
+import gbl.tag.GblType
 import gbl.tag.TagHeader
 import gbl.tag.Tag
 import gbl.tag.TagWithHeader

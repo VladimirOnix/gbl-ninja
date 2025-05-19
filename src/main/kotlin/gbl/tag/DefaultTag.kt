@@ -1,7 +1,5 @@
 package gbl.tag
 
-import parser.data.tag.GblType
-
 data class DefaultTag(
     val tagData: ByteArray,
     val tagHeader: TagHeader,

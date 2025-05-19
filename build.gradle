@@ -1,11 +1,12 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.1.20'
     id 'java'
+    id 'jacoco'
     id 'application'
 }
 
 group = 'org.example'
-version = '1.0-SNAPSHOT'
+version = '1.0'
 
 repositories {
     mavenCentral()
@@ -13,10 +14,71 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    // Добавляем зависимость для JUnit 5, которая нам понадобится
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
 }
 
-test {
+tasks.withType(Test) {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        xml.required = true
+        html.required = true
+        // Добавляем CSV отчет если нужен для интеграции с другими инструментами
+        csv.required = false
+    }
+
+    // Более детальная настройка исключений
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, excludes: [
+                    // Исключаем сгенерированные Kotlin-классы
+                    '**/*$*.*',
+                    // Исключаем jdk/internal
+                    'jdk/internal/**',
+                    // Исключаем классы data
+                    '**/data/**',
+                    // Исключаем классы моделей
+                    '**/models/**',
+                    // Исключаем файлы конфигурации
+                    '**/config/**'
+            ])
+        }))
+    }
+}
+
+// Добавляем минимальные пороги покрытия
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.7 // 70% покрытия как минимум
+            }
+        }
+
+        // Правила по конкретным пакетам
+        rule {
+            element = 'PACKAGE'
+            includes = ['org.example.core.*']
+
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.8 // 80% покрытия для ключевых пакетов
+            }
+        }
+    }
 }
 
 kotlin {
@@ -24,7 +86,7 @@ kotlin {
 }
 
 application {
-    mainClass = 'org.example.MainKt' // Modify this to your actual main class
+    mainClass = 'org.example.MainKt'
 }
 
 jar {
@@ -43,9 +105,15 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+tasks.register('checkCoverage') {
+    dependsOn jacocoTestCoverageVerification
+    description = 'Runs tests and verifies code coverage'
+    group = 'verification'
+}
+
 tasks.register('release') {
-    dependsOn clean, jar
-    description = 'Cleans the project and builds a release JAR'
+    dependsOn clean, jar, checkCoverage
+    description = 'Cleans the project, verifies code coverage, and builds a release JAR'
     group = 'build'
 }
 

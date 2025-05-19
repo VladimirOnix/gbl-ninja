@@ -1,6 +1,6 @@
 package gbl.tag.type.certificate
 
-import parser.data.tag.GblType
+import gbl.tag.GblType
 import gbl.tag.TagHeader
 import gbl.tag.Tag
 import gbl.tag.TagWithHeader

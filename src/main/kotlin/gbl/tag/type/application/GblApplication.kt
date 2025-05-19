@@ -1,15 +1,16 @@
 package gbl.tag.type.application
 
-import parser.data.tag.GblType
+import gbl.tag.GblType
 import gbl.tag.TagHeader
 import gbl.tag.Tag
+import gbl.tag.TagWithHeader
 
 data class GblApplication(
-    val tagHeader: TagHeader,
+    override val tagHeader: TagHeader,
     override val tagType: GblType,
     val applicationData: ApplicationData,
-    val tagData: ByteArray
-) : Tag {
+    override val tagData: ByteArray
+) : Tag, TagWithHeader {
     override fun copy(): Tag {
         return GblApplication(
             tagHeader = tagHeader,

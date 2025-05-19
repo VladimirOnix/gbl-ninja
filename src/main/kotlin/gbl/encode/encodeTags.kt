@@ -12,7 +12,7 @@ import gbl.tag.type.certificate.GblSignatureEcdsaP256
 import gbl.tag.type.encryption.GblEncryptionData
 import gbl.tag.type.encryption.GblEncryptionInitAesCcm
 import gbl.tag.type.version.GblVersionDependency
-import parser.data.tag.GblType
+import gbl.tag.GblType
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.CRC32
@@ -91,26 +91,44 @@ fun generateTagData(tag: Tag): ByteArray {
         }
 
         is GblEnd -> {
-            val buffer = ByteBuffer.allocate(4)
+            println("Found end tag ${tag.tagHeader.length.toInt()}")
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .putInt(tag.gblCrc.toInt())
+
             buffer.array()
         }
 
         is GblMetadata -> {
-            tag.metaData
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.metaData)
+
+            buffer.array()
         }
 
         is GblProgLz4 -> {
-            tag.tagData
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.tagData)
+
+            buffer.array()
         }
 
         is GblProgLzma -> {
-            tag.tagData
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.tagData)
+
+            buffer.array()
         }
 
         is GblEraseProg -> {
-            tag.tagData
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.tagData)
+
+            buffer.array()
         }
 
         is GblTagDelta -> {
@@ -146,7 +164,11 @@ fun generateTagData(tag: Tag): ByteArray {
         }
 
         is GblEncryptionData -> {
-            tag.encryptedGblData
+            val buffer = ByteBuffer.allocate(tag.tagHeader.length.toInt())
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(tag.encryptedGblData)
+
+            buffer.array()
         }
 
         is GblEncryptionInitAesCcm -> {

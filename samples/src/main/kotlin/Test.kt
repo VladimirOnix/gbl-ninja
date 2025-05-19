@@ -18,6 +18,8 @@ fun main() {
     parseExistingGbl("samples/src/main/assets/encrypted_gbl.gbl")
     println("\nANALYZING BOOTLOADER GBL FILE")
     parseExistingGbl("samples/src/main/assets/bootloader_prog_gbl.gbl")
+
+    createValidAndInvalidGbls()
 }
 
 fun createSimpleGbl() {
@@ -222,8 +224,40 @@ fun saveToFile(data: ByteArray, filename: String) {
         FileOutputStream(filename).use { fos ->
             fos.write(data)
         }
-        println("✓ File saved: $filename")
+        println("File saved: $filename")
     } catch (e: Exception) {
-        println("❌ Error saving file: ${e.message}")
+        println("Error saving file: ${e.message}")
     }
+}
+
+fun createValidAndInvalidGbls() {
+    println("\n===== CREATING VALID AND INVALID GBL FILES =====")
+
+    val validGbl = GblParser.Builder.createEmpty()
+        .addApplication()
+        .addProg(231U, ByteArray(1024))
+        .addEraseProg()
+        .buildToByteArray()
+
+    saveToFile(validGbl, "samples/src/main/assets/valid_file.gbl")
+    println("Valid GBL file created")
+    println("Size: ${validGbl.size} bytes")
+
+    val invalidGbl = validGbl.copyOf()
+
+    if (invalidGbl.size > 12) {
+        invalidGbl[0] = 0xFF.toByte()
+        invalidGbl[4] = 0x00.toByte()
+        invalidGbl[8] = 0xAA.toByte()
+    }
+
+    if (invalidGbl.size > 50) {
+        invalidGbl[40] = 0xFF.toByte()
+        invalidGbl[41] = 0xFF.toByte()
+        invalidGbl[42] = 0xFF.toByte()
+    }
+
+    saveToFile(invalidGbl, "samples/src/main/assets/invalid_file.gbl")
+    println("Invalid GBL file created (corrupted header and tags)")
+    println("Size: ${invalidGbl.size} bytes")
 }

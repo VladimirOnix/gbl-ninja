@@ -1,6 +1,6 @@
 package gbl.tag.type.version
 
-import parser.data.tag.GblType
+import gbl.tag.GblType
 import gbl.tag.Tag
 
 data class GblVersionDependency(

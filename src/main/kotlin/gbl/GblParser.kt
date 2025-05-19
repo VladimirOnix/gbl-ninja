@@ -18,7 +18,9 @@ import gbl.tag.type.encryption.GblEncryptionInitAesCcm
 import gbl.utils.putUIntToByteArray
 import parser.data.parse.parseTag
 import parser.data.parse.parseTagType
-import parser.data.tag.GblType
+import gbl.tag.GblType
+import kotlin.toUInt
+import kotlin.toULong
 
 class GblParser {
     companion object {
@@ -476,7 +478,7 @@ class GblParser {
 
             val tag = GblApplication(
                 tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
+                    id = gblType.value,
                     length = (GblApplication.APP_LENGTH + tagData.size).toUInt()
                 ),
                 tagType = gblType,
@@ -488,6 +490,8 @@ class GblParser {
                     productId = productId,
                 )
             )
+
+            println("APP TAG $tag")
 
             val tagData = tag.generateData()
 
@@ -520,16 +524,21 @@ class GblParser {
         }
 
         fun buildToList(): List<Tag> {
-            val builder = this.addEndTag()
-            return builder.gblTags.toList()
+            this.addEndTag()
+            return gblTags.toList()
         }
 
         fun buildToByteArray(): ByteArray {
             val tagsWithoutEnd = gblTags.filter { it !is GblEnd }
 
+            println("tagsWithoutEnd $tagsWithoutEnd")
+
             val endTag = createEndTagWithCrc(tagsWithoutEnd)
+            println("endTag $endTag")
 
             val finalTags = tagsWithoutEnd + endTag
+
+            println("finalTags $finalTags")
 
             return encodeTags(finalTags)
         }
