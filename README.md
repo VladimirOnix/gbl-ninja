@@ -123,10 +123,10 @@ if (parseResult is ParseResult.Success) {
 | PROG_LZ4             | LZ4-compressed programming data  |
 | PROG_LZMA            | LZMA-compressed programming data |
 | ERASEPROG            | Memory erase command             |
-| VERSION_DEPENDENCY   |                                  |
-| ENCRYPTION_DATA      |                                  |
-| ENCRYPTION_INIT      |                                  |
-| SIGNATURE_ECDSA_P256 |                                  |
+| VERSION_DEPENDENCY   | Version requirements check       |
+| ENCRYPTION_DATA      | Encrypted payload data           |
+| ENCRYPTION_INIT      | Encryption initialization data   |
+| SIGNATURE_ECDSA_P256 | ECDSA P-256 signature for auth   |
 | SE_UPGRADE           | SE upgrade information           |
 | END                  | Final tag with CRC               |
 
