@@ -1,10 +1,7 @@
----
 
 # 🔍 Gecko Bootloader Parser SDK
 
 **Gecko Bootloader Parser SDK** is a Kotlin library for parsing and creating files in the GBL (Gecko Bootloader) format. It allows you to parse, analyze, modify, and generate GBL files used for firmware updates on Silicon Labs-based devices.
-
----
 
 ## 📝 Description
 
@@ -116,22 +113,23 @@ if (parseResult is ParseResult.Success) {
 
 ## 📚 Supported Tag Types
 
-| Tag Type              | Description                      |
-|------------------ ----| -------------------------------- |
-| HEADER\_V3            | GBL file header (version 3)      |
-| BOOTLOADER            | Bootloader information           |
-| APPLICATION           | Application data                 |
-| METADATA              | File metadata                    |
-| PROG                  | Raw programming data             |
-| PROG\_LZ4             | LZ4-compressed programming data  |
-| PROG\_LZMA            | LZMA-compressed programming data |
-| ERASEPROG             | Memory erase command             |
-| VERSION_DEPENDENCY    |                                  |
-| ENCRYPTION_DATA       |                                  |
-| ENCRYPTION_INIT       |                                  |
-| SIGNATURE_ECDSA_P256  |                                  |
-| SE\_UPGRADE           | SE upgrade information           |
-| END                   | Final tag with CRC               |
+| Tag Type             | Description                      |
+|----------------------|----------------------------------|
+| HEADER_V3            | GBL file header (version 3)      |
+| BOOTLOADER           | Bootloader information           |
+| APPLICATION          | Application data                 |
+| METADATA             | File metadata                    |
+| PROG                 | Raw programming data             |
+| PROG_LZ4             | LZ4-compressed programming data  |
+| PROG_LZMA            | LZMA-compressed programming data |
+| ERASEPROG            | Memory erase command             |
+| VERSION_DEPENDENCY   |                                  |
+| ENCRYPTION_DATA      |                                  |
+| ENCRYPTION_INIT      |                                  |
+| SIGNATURE_ECDSA_P256 |                                  |
+| SE_UPGRADE           | SE upgrade information           |
+| END                  | Final tag with CRC               |
+
 
 ---
 
@@ -203,6 +201,6 @@ if (result is ParseResult.Success) {
 
 ## 📜 License
 
-This library is released under the **MIT License**.
+This library is released under the **Apache License**.
 
 ---
