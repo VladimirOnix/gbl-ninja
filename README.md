@@ -152,7 +152,7 @@ The final tag in the file must always be an **END** tag, which contains a CRC fo
 ### Core Interfaces and Classes
 
 ```kotlin
-interface TagInterface {
+interface Tag {
     val tagHeader: TagHeader
     val tagType: GblType
     val tagData: ByteArray
@@ -163,19 +163,15 @@ data class TagHeader(
     val length: UInt
 )
 
-sealed class ParseResult {
-    data class Success(val tags: List<TagInterface>) : ParseResult()
-    object Fatal : ParseResult()
+sealed class ParseTagResult {
+    data class Success(
+        val tagHeader: TagHeader,
+        val tagData: ByteArray,
+    ) : ParseTagResult()
+
+    data class Fatal(val error: Any? = null) : ParseTagResult()
 }
 ```
-
-### Byte Utilities
-
-```kotlin
-fun getFromBytes(byteArray: ByteArray, offset: Int = 0, length: Int = 4): ByteBuffer
-```
-
----
 
 ## ⚠️ Limitations & Notes
 
