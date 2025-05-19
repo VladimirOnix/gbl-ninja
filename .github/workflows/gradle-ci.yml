@@ -24,14 +24,29 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build Release JAR with coverage check
-        run: ./gradlew release
+      - name: Show Gradle tasks
+        run: ./gradlew tasks
 
-      - name: List built files
-        run: ls -l build/libs/
+      - name: Build Release JAR with coverage check
+        run: ./gradlew release --info
+
+      - name: Check if build directory exists
+        run: ls -la build/
+
+      - name: Check libs directory
+        run: |
+          if [ -d "build/libs" ]; then
+            echo "build/libs directory exists"
+            ls -l build/libs/
+          else
+            echo "build/libs directory does not exist"
+            echo "Checking for jar files in other locations:"
+            find . -name "*.jar"
+          fi
 
       - name: Upload Release artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-jar-${{ github.sha }}
           path: build/libs/*.jar
+        if: ${{ success() }}
