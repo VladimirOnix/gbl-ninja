@@ -1,52 +1,41 @@
-name: Android Gradle CI
+name: Build and Release
 
 on:
   push:
+    tags:
+      - 'v*'
     branches:
-      - dev
       - main
+      - dev
 
 jobs:
-  build_release:
+  build-release:
     runs-on: ubuntu-latest
-    env:
-      GRADLE_OPTS: -Dorg.gradle.daemon=false
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: 21
 
-      - name: Grant execute permission for gradlew
+      - name: Grant execute permission for Gradle
         run: chmod +x ./gradlew
 
-      - name: Show Gradle tasks
-        run: ./gradlew tasks
+      - name: Run release task
+        run: ./gradlew release
 
-      - name: Build Release JAR with coverage check
-        run: ./gradlew release --info
-
-      - name: Check if build directory exists
-        run: ls -la build/
-
-      - name: Check libs directory
+      - name: Find built JAR
+        id: find_jar
         run: |
-          if [ -d "build/libs" ]; then
-            echo "build/libs directory exists"
-            ls -l build/libs/
-          else
-            echo "build/libs directory does not exist"
-            echo "Checking for jar files in other locations:"
-            find . -name "*.jar"
-          fi
+          JAR_PATH=$(find build/libs -name "*.jar" | head -n 1)
+          echo "jar_file=$JAR_PATH" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Release artifact
+      - name: Upload release JAR as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-jar-${{ github.sha }}
-          path: build/libs/*.jar
-        if: ${{ success() }}
+          name: release-jar
+          path: ${{ steps.find_jar.outputs.jar_file }}
