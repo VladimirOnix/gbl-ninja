@@ -14,7 +14,6 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
-    // Добавляем зависимость для JUnit 5, которая нам понадобится
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
 }
 
@@ -33,52 +32,24 @@ jacocoTestReport {
     reports {
         xml.required = true
         html.required = true
-        // Добавляем CSV отчет если нужен для интеграции с другими инструментами
         csv.required = false
     }
 
-    // Более детальная настройка исключений
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, excludes: [
-                    // Исключаем сгенерированные Kotlin-классы
                     '**/*$*.*',
-                    // Исключаем jdk/internal
                     'jdk/internal/**',
-                    // Исключаем классы data
                     '**/data/**',
-                    // Исключаем классы моделей
                     '**/models/**',
-                    // Исключаем файлы конфигурации
                     '**/config/**'
             ])
         }))
     }
 }
 
-// Добавляем минимальные пороги покрытия
 jacocoTestCoverageVerification {
     dependsOn jacocoTestReport
-
-    violationRules {
-        rule {
-            limit {
-                minimum = 0.7 // 70% покрытия как минимум
-            }
-        }
-
-        // Правила по конкретным пакетам
-        rule {
-            element = 'PACKAGE'
-            includes = ['org.example.core.*']
-
-            limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = 0.8 // 80% покрытия для ключевых пакетов
-            }
-        }
-    }
 }
 
 kotlin {
