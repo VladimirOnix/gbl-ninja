@@ -47,8 +47,6 @@ Device resets after successful update
     - maven("https://jitpack.io")
 - implementation("com.github.Onix-Systems:NSGIF-Android:0.0.2")
 
-**or**
-
 ---
 
 ## 🚀 Usage
