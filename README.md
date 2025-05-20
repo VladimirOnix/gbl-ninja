@@ -42,11 +42,12 @@ Device resets after successful update
 
 ## 🛠️ Installation
 
-Add the dependency to your `build.gradle`:
+**for gradle.kts**:
+- add this inside *repositories* block:
+    - maven("https://jitpack.io")
+- implementation("com.github.Onix-Systems:NSGIF-Android:0.0.2")
 
-```groovy
-implementation(files("libs/GblCommander-1.0.jar"))
-```
+**or**
 
 ---
 
