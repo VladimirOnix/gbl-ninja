@@ -45,7 +45,7 @@ Device resets after successful update
 **for gradle.kts**:
 - add this inside *repositories* block:
     - maven("https://jitpack.io")
-- implementation("com.github.Onix-Systems:NSGIF-Android:0.0.2")
+- implementation("com.github.VladimirOnix:gbl-ninja:v3")
 
 ---
 
