@@ -1,0 +1,58 @@
+image:
+  name: gradle:8.10.2-jdk21
+
+stages:
+  - build
+  - test
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+cache:
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
+
+build_debug:
+  stage: build
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew clean jar
+  artifacts:
+    name: "debug-jar-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 week
+  only:
+    - dev
+    - merge_request
+
+build_release:
+  stage: build
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew clean release
+  artifacts:
+    name: "release-jar-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 month
+  only:
+    - staging
+    - release
+    - main
+
+test:
+  stage: test
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew test
+  only:
+    - dev
+    - merge_request
+    - staging
+    - release
+    - main
