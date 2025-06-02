@@ -1,4 +1,4 @@
-package gbl.tag.type.version
+package tag.type.version
 
 import tag.GblType
 import tag.Tag

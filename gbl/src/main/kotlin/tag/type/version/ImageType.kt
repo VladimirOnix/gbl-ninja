@@ -1,4 +1,4 @@
-package gbl.tag.type.version
+package tag.type.version
 
 enum class ImageType(
     val value: UInt

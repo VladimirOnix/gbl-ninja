@@ -1,4 +1,4 @@
-package gbl.tag.type
+package tag.type
 
 import tag.GblType
 import tag.TagHeader

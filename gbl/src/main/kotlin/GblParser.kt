@@ -5,14 +5,11 @@ import results.ParseTagResult
 import gbl.tag.DefaultTag
 import tag.Tag
 import tag.TagHeader
-import gbl.tag.type.*
 import tag.type.application.ApplicationData
 import tag.type.application.GblApplication
 import tag.type.certificate.ApplicationCertificate
 import tag.type.certificate.GblCertificateEcdsaP256
 import tag.type.certificate.GblSignatureEcdsaP256
-import gbl.tag.type.encryption.GblEncryptionData
-import gbl.tag.type.encryption.GblEncryptionInitAesCcm
 import utils.putUIntToByteArray
 import parse.parseTag
 import parse.parseTagType
@@ -21,6 +18,13 @@ import tag.type.GblBootloader
 import tag.type.GblEnd
 import tag.type.GblEraseProg
 import tag.type.GblHeader
+import tag.type.GblMetadata
+import tag.type.GblProg
+import tag.type.GblProgLz4
+import tag.type.GblProgLzma
+import tag.type.GblSeUpgrade
+import tag.type.encryption.GblEncryptionData
+import tag.type.encryption.GblEncryptionInitAesCcm
 import kotlin.toUInt
 
 class GblParser {

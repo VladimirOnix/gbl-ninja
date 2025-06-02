@@ -1,4 +1,4 @@
-package gbl.tag.type.encryption
+package tag.type.encryption
 
 import tag.GblType
 import tag.TagHeader

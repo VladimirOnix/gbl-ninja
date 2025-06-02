@@ -2,13 +2,9 @@ package encode
 
 import GblParser.Companion.TAG_ID_SIZE
 import GblParser.Companion.TAG_LENGTH_SIZE
-import gbl.tag.type.*
 import tag.type.application.GblApplication
 import tag.type.certificate.GblCertificateEcdsaP256
 import tag.type.certificate.GblSignatureEcdsaP256
-import gbl.tag.type.encryption.GblEncryptionData
-import gbl.tag.type.encryption.GblEncryptionInitAesCcm
-import gbl.tag.type.version.GblVersionDependency
 import tag.GblType
 import tag.Tag
 import tag.TagHeader
@@ -17,6 +13,15 @@ import tag.type.GblBootloader
 import tag.type.GblEnd
 import tag.type.GblEraseProg
 import tag.type.GblHeader
+import tag.type.GblMetadata
+import tag.type.GblProg
+import tag.type.GblProgLz4
+import tag.type.GblProgLzma
+import tag.type.GblSeUpgrade
+import tag.type.GblTagDelta
+import tag.type.encryption.GblEncryptionData
+import tag.type.encryption.GblEncryptionInitAesCcm
+import tag.type.version.GblVersionDependency
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.CRC32
