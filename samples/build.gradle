@@ -13,15 +13,11 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'org.jetbrains.kotlin:kotlin-stdlib'
-
-    testImplementation 'org.jetbrains.kotlin:kotlin-test'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 }
 
 test {
     useJUnitPlatform()
-    finalizedBy jacocoTestReport // після тестів запускаємо звіт
+    finalizedBy jacocoTestReport
 }
 
 jacoco {
@@ -39,5 +35,23 @@ jacocoTestReport {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
+
+jar {
+    archiveBaseName.set("gbl-ninja")
+    archiveVersion.set("")
+
+    manifest {
+        attributes(
+                'Main-Class': 'GblKt'
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+

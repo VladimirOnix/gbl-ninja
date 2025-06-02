@@ -1,7 +1,6 @@
 package tag
 
 import encode.generateTagData
-import gbl.tag.Tag
 
 interface Tag {
     val tagType: GblType

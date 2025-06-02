@@ -1,7 +1,6 @@
 package tag.type
 
 import tag.GblType
-import gbl.tag.type.GblEnd
 import tag.TagHeader
 import tag.Tag
 import tag.TagWithHeader

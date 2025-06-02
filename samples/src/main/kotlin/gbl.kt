@@ -1,5 +1,5 @@
-import gbl.GblParser
-import gbl.tag.Tag
+import results.ParseResult
+import tag.Tag
 import java.io.File
 import java.io.FileOutputStream
 
@@ -24,12 +24,19 @@ fun main(args: Array<String>) {
             }
             createEmptyGbl(args[1])
         }
-        "gblsimple" -> {
+        "gblbootloader" -> {
             if (args.size < 2) {
-                println("Usage: gblsimple <output_file>")
+                println("Usage: gblbootloader <output_file>")
                 return
             }
-            createSimpleGbl(args[1])
+            createBootloaderGbl(args[1])
+        }
+        "gblmetadata" -> {
+            if (args.size < 2) {
+                println("Usage: gblmetadata <output_file>")
+                return
+            }
+            createMetadataGbl(args[1], args[2])
         }
         else -> {
             println("Unknown command: ${args[0]}")
@@ -42,19 +49,14 @@ fun printHelp() {
     println("""
         Usage: <command> [options]
         Commands:
-          gblinfo <file>     - Parse and display info about a GBL file
-          gblempty <file>    - Create an empty GBL file
-          gblsimple <file>   - Create a simple GBL file with program data
+          gblinfo <file>                - Parse and display info about a GBL file
+          gblempty <file>               - Create an empty GBL file with application and dummy data
+          gblbootloader <file>          - Create a GBL file with bootloader and program data
+          gblmetadata <file> <metadata> - Create a GBL file with metadata tag only
     """.trimIndent())
 }
 
 fun createEmptyGbl(filename: String) {
-    val gblData = GblParser.Builder.createEmpty().buildToByteArray()
-    saveToFile(gblData, filename)
-    println("Empty GBL file created: $filename")
-}
-
-fun createSimpleGbl(filename: String) {
     val gblBuilder = GblParser.Builder.createEmpty()
         .addApplication()
         .addProg(231U, ByteArray(1024))
@@ -63,7 +65,36 @@ fun createSimpleGbl(filename: String) {
     val gblData = gblBuilder.buildToByteArray()
     saveToFile(gblData, filename)
 
-    println("Simple GBL file created: $filename")
+    println("Empty GBL file created: $filename")
+    println("Size: ${gblData.size} bytes")
+}
+
+fun createBootloaderGbl(filename: String) {
+    val gblBuilder = GblParser.Builder.createEmpty()
+        .addApplication()
+        .addBootloader(
+            bootloaderVersion = 0U,
+            address = 0x100U,
+            data = ByteArray(1024) { 0xFF.toByte() }
+        )
+        .addProg(231U, byteArrayOf(0x01, 0x02, 0x03))
+        .addEraseProg()
+
+    val gblData = gblBuilder.buildToByteArray()
+    saveToFile(gblData, filename)
+
+    println("GBL with Bootloader created: $filename")
+    println("Size: ${gblData.size} bytes")
+}
+
+fun createMetadataGbl(filename: String, metadata: String) {
+    val gblBuilder = GblParser.Builder.createEmpty()
+        .addMetadata(metadata.toByteArray())
+
+    val gblData = gblBuilder.buildToByteArray()
+    saveToFile(gblData, filename)
+
+    println("Metadata GBL file created: $filename")
     println("Size: ${gblData.size} bytes")
 }
 
@@ -80,10 +111,10 @@ fun parseExistingGbl(filename: String) {
     val parser = GblParser()
 
     when (val result = parser.parseFile(gblData)) {
-        is gbl.results.ParseResult.Success -> {
+        is ParseResult.Success -> {
             printTagInfo(result.resultList)
         }
-        is gbl.results.ParseResult.Fatal -> {
+        is ParseResult.Fatal -> {
             println("Error parsing GBL file: ${result.error}")
         }
     }

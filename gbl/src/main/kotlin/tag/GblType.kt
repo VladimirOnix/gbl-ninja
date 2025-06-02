@@ -19,7 +19,7 @@ enum class GblType(val value: UInt) {
     VERSION_DEPENDENCY(0x76A617EBU);
 
     companion object {
-        fun fromValue(value: UInt): gbl.tag.GblType? {
+        fun fromValue(value: UInt): GblType? {
             return entries.find { it.value == value }
         }
     }
