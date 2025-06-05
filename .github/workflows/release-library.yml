@@ -46,33 +46,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x library/gradlew
 
-      - name: Run tests and build Library JAR
-        run: ./gradlew clean test jacocoTestReport jar
-        working-directory: ./library
-
-      - name: Find and verify JAR file
-        id: jar_info
-        run: |
-          echo "Looking for JAR files in library/build/libs/:"
-          ls -la library/build/libs/ 2>/dev/null || echo "No libs directory found"
-          
-          # Find the JAR file dynamically
-          JAR_FILE=$(find library/build/libs -name "*.jar" -type f | head -1)
-          
-          if [ -z "$JAR_FILE" ]; then
-            echo "❌ No JAR file found in library/build/libs/"
-            echo "Available files in library/build/:"
-            ls -la library/build/ 2>/dev/null || echo "No build directory found"
-            echo "Checking entire library directory for JAR files:"
-            find library -name "*.jar" -type f 2>/dev/null || echo "No JAR files found"
-            exit 1
-          fi
-          
-          JAR_NAME=$(basename "$JAR_FILE")
-          echo "✅ JAR file found: $JAR_FILE"
-          echo "JAR_PATH=$JAR_FILE" >> $GITHUB_OUTPUT
-          echo "JAR_NAME=$JAR_NAME" >> $GITHUB_OUTPUT
-
       - name: Get version from tag
         id: get_version
         run: |
