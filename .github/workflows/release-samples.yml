@@ -1,0 +1,164 @@
+# .github/workflows/release-gbl-ninja.yml
+name: Release GBL Ninja
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Module to release'
+        required: true
+        default: 'gbl-ninja'
+        type: choice
+        options:
+          - gbl-ninja
+
+jobs:
+  build-and-release-gbl-ninja:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-gbl-ninja-${{ hashFiles('gbl-ninja/**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-gbl-ninja-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gbl-ninja/gradlew
+        working-directory: ./
+
+      - name: Build GBL Ninja JAR
+        run: ./gradlew clean jar
+        working-directory: ./gbl-ninja
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/gbl-ninja-v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/gbl-ninja-v}
+            echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
+            echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            VERSION="v$(date +'%Y%m%d')-$(echo $GITHUB_SHA | cut -c1-7)"
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "TAG_NAME=gbl-ninja-$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release directory
+        run: |
+          mkdir -p release-gbl-ninja
+          cp gbl-ninja/build/libs/gbl-ninja.jar release-gbl-ninja/
+          cp gbl-ninja/gblninja.bat release-gbl-ninja/
+          cp gbl-ninja/gblninja.sh release-gbl-ninja/
+          # Додаємо README якщо є
+          if [ -f "gbl-ninja/README.md" ]; then
+            cp gbl-ninja/README.md release-gbl-ninja/
+          fi
+
+      - name: Create ZIP archive
+        run: |
+          cd release-gbl-ninja
+          zip -r ../gbl-ninja-${{ steps.get_version.outputs.VERSION }}.zip .
+          cd ..
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
+          release_name: GBL Ninja ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            # GBL Ninja ${{ steps.get_version.outputs.VERSION }}
+            
+            Release of GBL Ninja utility for working with GBL files.
+            
+            ## 📦 Files in this release:
+            - `gbl-ninja.jar` - main JAR file
+            - `gblninja.bat` - wrapper script for Windows
+            - `gblninja.sh` - wrapper script for Linux/macOS
+            - `gbl-ninja-${{ steps.get_version.outputs.VERSION }}.zip` - complete package
+            
+            ## 🚀 Installation:
+            1. Download the ZIP archive
+            2. Extract to desired directory
+            3. Make sure Java 17+ is installed
+            4. Run the appropriate script for your OS
+            
+            ## 💻 Usage:
+            ```bash
+            # Windows
+            gblninja.bat -i input.gbl
+            
+            # Linux/macOS
+            ./gblninja.sh -i input.gbl
+            ```
+            
+            ## 🔧 Available commands:
+            - `-i` / `--gblinfo` - get information about GBL file
+            - `-c` / `--gblcreate` - create new GBL file
+            - `-f` / `--file` - specify file to process
+            - `-v` / `--version` - show version
+
+          draft: false
+          prerelease: false
+
+      - name: Upload JAR to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release-gbl-ninja/gbl-ninja.jar
+          asset_name: gbl-ninja.jar
+          asset_content_type: application/java-archive
+
+      - name: Upload Windows Script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release-gbl-ninja/gblninja.bat
+          asset_name: gblninja.bat
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux/macOS Script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release-gbl-ninja/gblninja.sh
+          asset_name: gblninja.sh
+          asset_content_type: application/octet-stream
+
+      - name: Upload ZIP Package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./gbl-ninja-${{ steps.get_version.outputs.VERSION }}.zip
+          asset_name: gbl-ninja-${{ steps.get_version.outputs.VERSION }}.zip
+          asset_content_type: application/zip

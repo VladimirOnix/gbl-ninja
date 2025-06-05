@@ -3,21 +3,14 @@ import results.ParseResult
 import tag.GblType
 import tag.Tag
 import tag.TagWithHeader
-import tag.type.GblBootloader
-import tag.type.GblEnd
-import tag.type.GblEraseProg
-import tag.type.GblHeader
-import tag.type.GblMetadata
-import tag.type.GblProg
-import tag.type.GblProgLz4
-import tag.type.GblProgLzma
-import tag.type.GblSeUpgrade
+import tag.type.*
 import tag.type.application.GblApplication
 import tag.type.certificate.GblCertificateEcdsaP256
 import tag.type.certificate.GblSignatureEcdsaP256
 import tag.type.encryption.GblEncryptionData
 import tag.type.encryption.GblEncryptionInitAesCcm
 import tag.type.version.GblVersionDependency
+import utils.toByteArray
 import java.io.File
 import java.io.FileOutputStream
 
@@ -53,6 +46,7 @@ fun main(args: Array<String>) {
             }
             parseExistingGbl(file, format)
         }
+
         "gblcreate" -> {
             handleGblCreate(options)
         }
@@ -72,6 +66,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-F", "--format", "-fmt" -> {
                 if (i + 1 < args.size) {
                     result["format"] = args[i + 1]
@@ -80,6 +75,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-t", "--type" -> {
                 if (i + 1 < args.size) {
                     result["type"] = args[i + 1]
@@ -88,6 +84,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-v", "--version" -> {
                 if (i + 1 < args.size) {
                     result["version"] = args[i + 1]
@@ -96,6 +93,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-m", "--metadata" -> {
                 if (i + 1 < args.size) {
                     result["metadata"] = args[i + 1]
@@ -104,6 +102,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-a", "--address" -> {
                 if (i + 1 < args.size) {
                     result["address"] = args[i + 1]
@@ -112,6 +111,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-s", "--size" -> {
                 if (i + 1 < args.size) {
                     result["size"] = args[i + 1]
@@ -120,6 +120,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             "-d", "--data" -> {
                 if (i + 1 < args.size) {
                     result["data"] = args[i + 1]
@@ -128,6 +129,7 @@ fun parseOptions(args: List<String>): Map<String, String> {
                     i++
                 }
             }
+
             else -> i++
         }
     }
@@ -228,10 +230,10 @@ fun createEmptyGbl(filename: String, options: Map<String, String>) {
     println("Data size: $size bytes")
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addProg(231U, ByteArray(size))
-            .addEraseProg()
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .prog(231U, ByteArray(size))
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -276,15 +278,15 @@ fun createBootloaderGbl(filename: String, options: Map<String, String>) {
     }
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addBootloader(
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .bootloader(
                 bootloaderVersion = 0U,
                 address = address,
                 data = bootloaderData
             )
-            .addProg(231U, byteArrayOf(0x01, 0x02, 0x03))
-            .addEraseProg()
+            .prog(231U, byteArrayOf(0x01, 0x02, 0x03))
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -312,8 +314,8 @@ fun createMetadataGbl(filename: String, options: Map<String, String>) {
     println("Metadata size: ${metadata.length} characters")
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addMetadata(metadata.toByteArray())
+        val gblBuilder = GblParser.Builder.empty()
+            .metadata(metadata.toByteArray())
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -326,7 +328,7 @@ fun createMetadataGbl(filename: String, options: Map<String, String>) {
     }
 }
 
-fun parseExistingGbl(filename: String, format: String = "content") {
+fun parseExistingGbl(filename: String, format: String = "compact") {
     println("Parsing file: $filename")
 
     val file = File(filename)
@@ -341,8 +343,11 @@ fun parseExistingGbl(filename: String, format: String = "content") {
     when (val result = parser.parseFile(gblData)) {
         is ParseResult.Success -> {
             println("File parsed successfully")
+            println("File size: ${gblData.size} bytes")
+            println()
             printTagInfo(result.resultList, format)
         }
+
         is ParseResult.Fatal -> {
             println("Error parsing GBL file: ${result.error}")
         }
@@ -379,14 +384,14 @@ fun createProgLz4Gbl(filename: String, options: Map<String, String>) {
     val compressedData = ByteArray(originalData.size / 2) { (it % 128).toByte() }
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addProgLz4(
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .progLz4(
                 flashStartAddress = address,
                 compressedData = compressedData,
                 decompressedSize = originalData.size.toUInt()
             )
-            .addEraseProg()
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -432,14 +437,14 @@ fun createProgLzmaGbl(filename: String, options: Map<String, String>) {
     val compressedData = ByteArray(originalData.size / 3) { (it % 64).toByte() }
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addProgLzma(
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .progLzma(
                 flashStartAddress = address,
                 compressedData = compressedData,
                 decompressedSize = originalData.size.toUInt()
             )
-            .addEraseProg()
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -474,13 +479,13 @@ fun createSeUpgradeGbl(filename: String, options: Map<String, String>) {
     }
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addSeUpgrade(
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .seUpgrade(
                 version = version,
                 data = seData
             )
-            .addEraseProg()
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -508,14 +513,14 @@ fun createEncryptedGbl(filename: String, options: Map<String, String>) {
     val encryptedData = ByteArray(size) { ((it + nonce.toInt()) % 256).toByte() }.map { it.toByte() }.toByteArray()
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addEncryptionInit(
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .encryptionInit(
                 msgLen = size.toUInt(),
                 nonce = nonce.toUByte()
             )
-            .addEncryptionData(encryptedData)
-            .addEraseProg()
+            .encryptionData(encryptedData)
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -542,14 +547,14 @@ fun createSignedGbl(filename: String, options: Map<String, String>) {
     println("Signature S: 0x${sValue.toString(16).uppercase()}")
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addProg(0x1000U, ByteArray(size) { (it % 256).toByte() })
-            .addSignatureEcdsaP256(
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .prog(0x1000U, ByteArray(size) { (it % 256).toByte() })
+            .signatureEcdsaP256(
                 r = rValue.toUByte(),
                 s = sValue.toUByte()
             )
-            .addEraseProg()
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -572,11 +577,11 @@ fun createVersionDependencyGbl(filename: String, options: Map<String, String>) {
     println("Version dependency: $dependencyVersion")
 
     try {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication()
-            .addVersionDependency(dependencyData)
-            .addProg(0x1000U, ByteArray(256) { (it % 256).toByte() })
-            .addEraseProg()
+        val gblBuilder = GblParser.Builder.empty()
+            .application()
+            .versionDependency(dependencyData)
+            .prog(0x1000U, ByteArray(256) { (it % 256).toByte() })
+            .eraseProg()
 
         val gblData = gblBuilder.buildToByteArray()
         saveToFile(gblData, filename)
@@ -590,121 +595,412 @@ fun createVersionDependencyGbl(filename: String, options: Map<String, String>) {
     }
 }
 
-fun printTagInfo(tags: List<Tag>, format: String = "content") {
-    fun bytesToHexWithLimit(bytes: ByteArray, bytesPerLine: Int = 16): List<String> {
-        return bytes.asSequence()
+fun printTagInfo(tags: List<Tag>, format: String = "compact") {
+    println("GBL file contains ${tags.size} tag(s):")
+    println()
+
+    when (format.lowercase()) {
+        "compact", "c" -> printCompactTagInfo(tags)
+        "full", "f", "hex", "h" -> printFullTagInfo(tags)
+        else -> {
+            println("Unknown format '$format'. Using compact format.")
+            printCompactTagInfo(tags)
+        }
+    }
+}
+
+fun printCompactTagInfo(tags: List<Tag>) {
+    println("%-4s %-20s %-12s %-8s %s".format("No.", "Tag Type", "Start Addr", "Size", "Additional Info"))
+    println("-".repeat(65))
+
+    tags.forEachIndexed { index, tag ->
+        val tagNum = "${index + 1}."
+        val tagType = tag.tagType.toString()
+
+        val (startAddr, size, additionalInfo) = when (tag.tagType) {
+            GblType.HEADER_V3 -> {
+                val t = tag as GblHeader
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+
+                Triple("-", "${t.tagData.size + headerSize}B", "v${t.version}, type=${t.gblType}")
+            }
+
+            GblType.BOOTLOADER -> {
+                val t = tag as GblBootloader
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("0x${t.address.toString(16).uppercase()}", "${t.tagData.size + headerSize}B", "v${t.bootloaderVersion}")
+            }
+
+            GblType.APPLICATION -> {
+                val t = tag as GblApplication
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "${t.applicationData}")
+            }
+
+            GblType.METADATA -> {
+                val t = tag as GblMetadata
+                val preview = String(t.metaData).take(30)
+                val suffix = if (t.metaData.size > 30) "..." else ""
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "\"$preview$suffix\"")
+            }
+
+            GblType.PROG -> {
+                val t = tag as GblProg
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("0x${t.flashStartAddress.toString(16).uppercase()}", "${t.data.size + headerSize}B", "")
+            }
+
+            GblType.PROG_LZ4 -> {
+                val t = tag as GblProgLz4
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "LZ4 compressed")
+            }
+
+            GblType.PROG_LZMA -> {
+                val t = tag as GblProgLzma
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "LZMA compressed")
+            }
+
+            GblType.SE_UPGRADE -> {
+                val t = tag as GblSeUpgrade
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.data.size + headerSize}B", "v${t.version}, blob=${t.blobSize}")
+            }
+
+            GblType.ERASEPROG -> {
+                val t = tag as GblEraseProg
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "")
+            }
+
+            GblType.END -> {
+                val t = tag as GblEnd
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "CRC=0x${t.gblCrc.toString(16).uppercase()}")
+            }
+
+            GblType.ENCRYPTION_DATA -> {
+                val t = tag as GblEncryptionData
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "Encrypted")
+            }
+
+            GblType.ENCRYPTION_INIT -> {
+                val t = tag as GblEncryptionInitAesCcm
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "Len=${t.msgLen}, Nonce=0x${t.nonce.toString(16)}")
+            }
+
+            GblType.SIGNATURE_ECDSA_P256 -> {
+                val t = tag as GblSignatureEcdsaP256
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "ECDSA P256")
+            }
+
+            GblType.CERTIFICATE_ECDSA_P256 -> {
+                val t = tag as GblCertificateEcdsaP256
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                Triple("-", "${t.tagData.size + headerSize}B", "Certificate")
+            }
+
+            GblType.VERSION_DEPENDENCY -> {
+                val t = tag as GblVersionDependency
+                val versionStr = t.version.toString().take(20)
+                Triple("-", "${t.version.toByteArray().size}B", "v$versionStr")
+            }
+
+            else -> {
+                if (tag is TagWithHeader) {
+                    val t = tag as TagWithHeader
+                    val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                    Triple("-", "${t.tagData.size + headerSize}B", "")
+                } else {
+                    Triple("-", "-", "")
+                }
+            }
+        }
+
+        println(
+            "%-4s %-20s %-12s %-8s %s".format(
+                tagNum,
+                tagType.take(20),
+                startAddr,
+                size,
+                additionalInfo
+            )
+        )
+    }
+}
+
+fun printFullTagInfo(tags: List<Tag>) {
+    fun bytesToHexWithLimit(bytes: ByteArray, maxLines: Int = 10, bytesPerLine: Int = 16): List<String> {
+        val allLines = bytes.asSequence()
             .mapIndexed { index, byte -> "%02X".format(byte) }
             .chunked(bytesPerLine)
             .map { it.joinToString(" ") }
             .toList()
+
+        return if (allLines.size > maxLines) {
+            allLines.take(maxLines - 1) + listOf("... (${allLines.size - maxLines + 1} more lines, ${bytes.size} bytes total)")
+        } else {
+            allLines
+        }
     }
 
-    println("GBL file contains ${tags.size} tag(s):")
+    fun printFormatted(label: String, value: Any?) {
+        val labelPadding = label.padEnd(20)
 
-    tags.forEachIndexed { index, tag ->
-        println()
-        println("Tag ${index + 1}: ${tag.tagType}")
+        if (value is ByteArray) {
+            val lines = bytesToHexWithLimit(value)
+            println("  $labelPadding: ${lines.firstOrNull() ?: ""}")
+            lines.drop(1).forEach { println(" ".repeat(labelPadding.length + 4) + it) }
+        } else {
+            println("  $labelPadding: $value")
+        }
+    }
 
-        fun printFormatted(label: String, value: Any?) {
-            val labelPadding = label.padEnd(20)
+    fun getTagInfo(tag: Tag): Triple<String, String, String> {
+        return when (tag.tagType) {
+            GblType.HEADER_V3 -> {
+                val t = tag as GblHeader
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "v${t.version}, type=${t.gblType}")
+            }
 
-            if (value is ByteArray) {
-                val lines = bytesToHexWithLimit(value)
-                println("  $labelPadding: ${lines.firstOrNull() ?: ""}")
-                lines.drop(1).forEach { println(" ".repeat(labelPadding.length + 4) + it) }
-            } else {
-                println("  $labelPadding: $value")
+            GblType.BOOTLOADER -> {
+                val t = tag as GblBootloader
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("0x${t.address.toString(16).uppercase()}", "${totalSize}B", "v${t.bootloaderVersion}")
+            }
+
+            GblType.APPLICATION -> {
+                val t = tag as GblApplication
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "${t.applicationData}")
+            }
+
+            GblType.METADATA -> {
+                val t = tag as GblMetadata
+                val preview = String(t.metaData).take(30)
+                val suffix = if (t.metaData.size > 30) "..." else ""
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "\"$preview$suffix\"")
+            }
+
+            GblType.PROG -> {
+                val t = tag as GblProg
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.data.size + headerSize
+                Triple("0x${t.flashStartAddress.toString(16).uppercase()}", "${totalSize}B", "")
+            }
+
+            GblType.PROG_LZ4 -> {
+                val t = tag as GblProgLz4
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "LZ4 compressed")
+            }
+
+            GblType.PROG_LZMA -> {
+                val t = tag as GblProgLzma
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "LZMA compressed")
+            }
+
+            GblType.SE_UPGRADE -> {
+                val t = tag as GblSeUpgrade
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.data.size + headerSize
+                Triple("-", "${totalSize}B", "v${t.version}, blob=${t.blobSize}")
+            }
+
+            GblType.ERASEPROG -> {
+                val t = tag as GblEraseProg
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "")
+            }
+
+            GblType.END -> {
+                val t = tag as GblEnd
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "CRC=0x${t.gblCrc.toString(16).uppercase()}")
+            }
+
+            GblType.ENCRYPTION_DATA -> {
+                val t = tag as GblEncryptionData
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "Encrypted")
+            }
+
+            GblType.ENCRYPTION_INIT -> {
+                val t = tag as GblEncryptionInitAesCcm
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "Len=${t.msgLen}, Nonce=0x${t.nonce.toString(16)}")
+            }
+
+            GblType.SIGNATURE_ECDSA_P256 -> {
+                val t = tag as GblSignatureEcdsaP256
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "ECDSA P256")
+            }
+
+            GblType.CERTIFICATE_ECDSA_P256 -> {
+                val t = tag as GblCertificateEcdsaP256
+                val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                val totalSize = t.tagData.size + headerSize
+                Triple("-", "${totalSize}B", "Certificate")
+            }
+
+            GblType.VERSION_DEPENDENCY -> {
+                val t = tag as GblVersionDependency
+                val versionStr = t.version.toString().take(20)
+                Triple("-", "${t.version.toByteArray().size}B", "v$versionStr")
+            }
+
+            else -> {
+                if (tag is TagWithHeader) {
+                    val t = tag as TagWithHeader
+                    val headerSize = t.tagHeader.id.toByteArray().size + t.tagHeader.length.toByteArray().size
+                    val totalSize = t.tagData.size + headerSize
+                    Triple("-", "${totalSize}B", "")
+                } else {
+                    Triple("-", "-", "")
+                }
             }
         }
+    }
 
-        if (format == "short") {
-            if(tag is TagWithHeader) {
-                val t = tag as TagWithHeader
-                val lines = bytesToHexWithLimit(t.tagData)
-                println("  ${lines.firstOrNull() ?: ""}")
-                lines.drop(1).forEach { println("  $it") }
+    println("Full tag information:")
+    println("=".repeat(50))
+
+    tags.forEachIndexed { index, tag ->
+        val (startAddr, size, additionalInfo) = getTagInfo(tag)
+
+        println()
+        println("Tag ${index + 1}: ${tag.tagType}")
+        println("-".repeat(30))
+
+        printFormatted("Tag Length", size)
+        printFormatted("Start Address", startAddr)
+        if (additionalInfo.isNotEmpty()) {
+            printFormatted("Additional Info", additionalInfo)
+        }
+
+        println("  " + "-".repeat(18))
+
+        when (tag.tagType) {
+            GblType.HEADER_V3 -> {
+                val t = tag as GblHeader
+                printFormatted("GBLVersion", t.version)
+                printFormatted("GBLType", t.gblType)
             }
-        } else {
-            when (tag.tagType) {
-                GblType.HEADER_V3 -> {
-                    val t = tag as GblHeader
-                    printFormatted("GBLVersion", t.version)
-                    printFormatted("GBLType", t.gblType)
-                }
-                GblType.BOOTLOADER -> {
-                    val t = tag as GblBootloader
-                    printFormatted("BootloaderVersion", t.bootloaderVersion)
-                    printFormatted("Address", "0x${t.address.toString(16).uppercase()}")
-                    printFormatted("Data", t.data)
-                }
-                GblType.APPLICATION -> {
-                    val t = tag as GblApplication
-                    printFormatted("Version", t.applicationData.version)
-                    printFormatted("Type", t.applicationData.type)
-                    printFormatted("ProductId", t.applicationData.productId)
-                    printFormatted("Capabilities", t.applicationData.capabilities)
-                }
-                GblType.METADATA -> {
-                    val t = tag as GblMetadata
-                    printFormatted("MetaData", t.metaData)
-                }
-                GblType.PROG -> {
-                    val t = tag as GblProg
-                    printFormatted("FlashStartAddress", t.flashStartAddress)
-                    printFormatted("Data", t.data)
-                }
-                GblType.PROG_LZ4 -> {
-                    val t = tag as GblProgLz4
-                    printFormatted("PROG_LZ4 Data", t.tagData)
-                }
-                GblType.PROG_LZMA -> {
-                    val t = tag as GblProgLzma
-                    printFormatted("PROG_LZMA Data", t.tagData)
-                }
-                GblType.ERASEPROG -> {
-                    val t = tag as GblEraseProg
-                    printFormatted("ERASEPROG Content", t.tagData)
-                }
-                GblType.SE_UPGRADE -> {
-                    val t = tag as GblSeUpgrade
-                    printFormatted("Version", t.version)
-                    printFormatted("BlobSize", t.blobSize)
-                    printFormatted("SE_UPGRADE Data", t.data)
-                }
-                GblType.END -> {
-                    val t = tag as GblEnd
-                    printFormatted("GblCrc", t.gblCrc)
-                }
-                GblType.TAG -> {
-                    val t = tag as DefaultTag
+
+            GblType.BOOTLOADER -> {
+                val t = tag as GblBootloader
+                printFormatted("BootloaderVersion", t.bootloaderVersion)
+                printFormatted("Address", "0x${t.address.toString(16).uppercase()}")
+                printFormatted("Data", t.data)
+            }
+
+            GblType.APPLICATION -> {
+                val t = tag as GblApplication
+                printFormatted("Version", t.applicationData.version)
+                printFormatted("Type", t.applicationData.type)
+                printFormatted("ProductId", t.applicationData.productId)
+                printFormatted("Capabilities", t.applicationData.capabilities)
+            }
+
+            GblType.METADATA -> {
+                val t = tag as GblMetadata
+                printFormatted("MetaData (text)", String(t.metaData))
+                printFormatted("MetaData (hex)", t.metaData)
+            }
+
+            GblType.PROG -> {
+                val t = tag as GblProg
+                printFormatted("FlashStartAddress", "0x${t.flashStartAddress.toString(16).uppercase()}")
+                printFormatted("Data", t.data)
+            }
+
+            GblType.PROG_LZ4 -> {
+                val t = tag as GblProgLz4
+                printFormatted("PROG_LZ4 Data", t.tagData)
+            }
+
+            GblType.PROG_LZMA -> {
+                val t = tag as GblProgLzma
+                printFormatted("PROG_LZMA Data", t.tagData)
+            }
+
+            GblType.ERASEPROG -> {
+                val t = tag as GblEraseProg
+                printFormatted("ERASEPROG Content", t.tagData)
+            }
+
+            GblType.SE_UPGRADE -> {
+                val t = tag as GblSeUpgrade
+                printFormatted("Version", t.version)
+                printFormatted("BlobSize", t.blobSize)
+                printFormatted("SE_UPGRADE Data", t.data)
+            }
+
+            GblType.END -> {
+                val t = tag as GblEnd
+                printFormatted("GblCrc", "0x${t.gblCrc.toString(16).uppercase()}")
+            }
+
+            GblType.TAG -> {
+                val t = tag as DefaultTag
+                printFormatted("TagData", t.tagData)
+            }
+
+            GblType.ENCRYPTION_DATA -> {
+                val t = tag as GblEncryptionData
+                printFormatted("EncryptedGblData", t.encryptedGblData)
+            }
+
+            GblType.ENCRYPTION_INIT -> {
+                val t = tag as GblEncryptionInitAesCcm
+                printFormatted("MSGLen", t.msgLen)
+                printFormatted("Nonce", "0x${t.nonce.toString(16)}")
+            }
+
+            GblType.SIGNATURE_ECDSA_P256 -> {
+                val t = tag as GblSignatureEcdsaP256
+                printFormatted("R", "0x${t.r.toString(16)}")
+                printFormatted("S", "0x${t.s.toString(16)}")
+            }
+
+            GblType.CERTIFICATE_ECDSA_P256 -> {
+                val t = tag as GblCertificateEcdsaP256
+                printFormatted("Certificate", t.certificate)
+            }
+
+            GblType.VERSION_DEPENDENCY -> {
+                val t = tag as GblVersionDependency
+                printFormatted("Version", t.version.toString())
+                printFormatted("Reversed", t.reversed)
+                printFormatted("ImageType", t.imageType)
+                printFormatted("Statement", t.statement)
+            }
+
+            else -> {
+                if (tag is TagWithHeader) {
+                    val t = tag as TagWithHeader
                     printFormatted("TagData", t.tagData)
-                }
-                GblType.ENCRYPTION_DATA -> {
-                    val t = tag as GblEncryptionData
-                    printFormatted("EncryptedGblData", t.encryptedGblData)
-                }
-                GblType.ENCRYPTION_INIT -> {
-                    val t = tag as GblEncryptionInitAesCcm
-                    printFormatted("MSGLen", t.msgLen)
-                    printFormatted("Nonce", t.nonce)
-                }
-                GblType.SIGNATURE_ECDSA_P256 -> {
-                    val t = tag as GblSignatureEcdsaP256
-                    printFormatted("R", t.r)
-                    printFormatted("S", t.s)
-                }
-                GblType.CERTIFICATE_ECDSA_P256 -> {
-                    val t = tag as GblCertificateEcdsaP256
-                    printFormatted("Certificate", t.certificate)
-                }
-                GblType.VERSION_DEPENDENCY -> {
-                    val t = tag as GblVersionDependency
-                    printFormatted("Version", t.version)
-                    printFormatted("Reversed", t.reversed)
-                    printFormatted("ImageType", t.imageType)
-                    printFormatted("Statement", t.statement)
-                }
-                else -> {
+                } else {
                     println("  Details not implemented for this type")
                 }
             }

@@ -1,12 +1,12 @@
-import results.ParseResult
-import tag.GblType
-import tag.type.GblHeader
-import gbl.tag.type.GblProg
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import results.ParseResult
+import tag.GblType
+import tag.type.GblHeader
+import tag.type.GblProg
 import java.io.File
 import java.io.FileOutputStream
 
@@ -187,13 +187,13 @@ class GblValidationTest {
     @Test
     @DisplayName("Should create non-null GBL file")
     fun testGblFileCreationNonNull() {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication(
+        val gblBuilder = GblParser.Builder.empty()
+            .application(
                 type = 2U,
                 version = 0x01000000U,
                 capabilities = 0x00000001U
             )
-            .addProg(
+            .prog(
                 flashStartAddress = 0x08000000U,
                 data = "PROGRAM_DATA".toByteArray()
             )
@@ -205,13 +205,13 @@ class GblValidationTest {
     @Test
     @DisplayName("Should create non-empty GBL file")
     fun testGblFileCreationNonEmpty() {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication(
+        val gblBuilder = GblParser.Builder.empty()
+            .application(
                 type = 2U,
                 version = 0x01000000U,
                 capabilities = 0x00000001U
             )
-            .addProg(
+            .prog(
                 flashStartAddress = 0x08000000U,
                 data = "PROGRAM_DATA".toByteArray()
             )
@@ -223,13 +223,13 @@ class GblValidationTest {
     @Test
     @DisplayName("Created GBL should be parseable")
     fun testCreatedGblIsParseable() {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication(
+        val gblBuilder = GblParser.Builder.empty()
+            .application(
                 type = 2U,
                 version = 0x01000000U,
                 capabilities = 0x00000001U
             )
-            .addProg(
+            .prog(
                 flashStartAddress = 0x08000000U,
                 data = "PROGRAM_DATA".toByteArray()
             )
@@ -244,13 +244,13 @@ class GblValidationTest {
     @Test
     @DisplayName("Created GBL should contain non-empty tags list")
     fun testCreatedGblContainsNonEmptyTags() {
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication(
+        val gblBuilder = GblParser.Builder.empty()
+            .application(
                 type = 2U,
                 version = 0x01000000U,
                 capabilities = 0x00000001U
             )
-            .addProg(
+            .prog(
                 flashStartAddress = 0x08000000U,
                 data = "PROGRAM_DATA".toByteArray()
             )
@@ -267,13 +267,13 @@ class GblValidationTest {
     private fun createValidAndInvalidGbls() {
         println("\n===== CREATING VALID AND INVALID GBL FILES FOR TESTING =====")
 
-        val gblBuilder = GblParser.Builder.createEmpty()
-            .addApplication(
+        val gblBuilder = GblParser.Builder.empty()
+            .application(
                 type = 2U,
                 version = 0x01000000U,
                 capabilities = 0x00000001U
             )
-            .addProg(
+            .prog(
                 flashStartAddress = 0x08000000U,
                 data = "PROGRAM_DATA".toByteArray()
             )

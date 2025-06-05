@@ -1,31 +1,22 @@
 import encode.createEndTagWithCrc
 import encode.encodeTags
+import gbl.tag.DefaultTag
+import parse.parseTag
+import parse.parseTagType
 import results.ParseResult
 import results.ParseTagResult
-import gbl.tag.DefaultTag
+import tag.GblType
 import tag.Tag
 import tag.TagHeader
+import tag.type.*
 import tag.type.application.ApplicationData
 import tag.type.application.GblApplication
 import tag.type.certificate.ApplicationCertificate
 import tag.type.certificate.GblCertificateEcdsaP256
 import tag.type.certificate.GblSignatureEcdsaP256
-import utils.putUIntToByteArray
-import parse.parseTag
-import parse.parseTagType
-import tag.GblType
-import tag.type.GblBootloader
-import tag.type.GblEnd
-import tag.type.GblEraseProg
-import tag.type.GblHeader
-import tag.type.GblMetadata
-import tag.type.GblProg
-import tag.type.GblProgLz4
-import tag.type.GblProgLzma
-import tag.type.GblSeUpgrade
 import tag.type.encryption.GblEncryptionData
 import tag.type.encryption.GblEncryptionInitAesCcm
-import kotlin.toUInt
+import utils.putUIntToByteArray
 
 class GblParser {
     companion object {
@@ -79,7 +70,6 @@ class GblParser {
         return ParseResult.Success(rawTags)
     }
 
-
     fun encode(tags: List<Tag>): ByteArray {
         val tagsWithoutEnd = tags.filter { it !is GblEnd }
 
@@ -92,13 +82,18 @@ class GblParser {
 
     class Builder {
         private val gblTags = mutableListOf<Tag>()
+        private var buildTag: String? = null
+        private val savedBuilders = mutableMapOf<String, List<Tag>>()
+        private val savedBuildersById = mutableMapOf<Int, List<Tag>>()
+        private var nextId = 1
 
         companion object {
-            fun createEmpty(): Builder {
-                val build = Builder()
-                    .addHeader()
+            fun create(): Builder {
+                return Builder().addHeader()
+            }
 
-                return build
+            fun empty(): Builder {
+                return Builder()
             }
         }
 
@@ -125,9 +120,7 @@ class GblParser {
             return this
         }
 
-        fun addEncryptionData(
-            encryptedGblData: ByteArray
-        ): Builder {
+        fun encryptionData(encryptedGblData: ByteArray): Builder {
             val gblType = GblType.ENCRYPTION_DATA
 
             val tag = GblEncryptionData(
@@ -150,10 +143,7 @@ class GblParser {
             return this
         }
 
-        fun addEncryptionInit(
-            msgLen: UInt,
-            nonce: UByte
-        ): Builder {
+        fun encryptionInit(msgLen: UInt, nonce: UByte): Builder {
             val gblType = GblType.ENCRYPTION_INIT
 
             val tag = GblEncryptionInitAesCcm(
@@ -177,10 +167,7 @@ class GblParser {
             return this
         }
 
-        fun addSignatureEcdsaP256(
-            r: UByte,
-            s: UByte
-        ): Builder {
+        fun signatureEcdsaP256(r: UByte, s: UByte): Builder {
             val gblType = GblType.SIGNATURE_ECDSA_P256
 
             val tag = GblSignatureEcdsaP256(
@@ -204,9 +191,7 @@ class GblParser {
             return this
         }
 
-        fun addCertificateEcdsaP256(
-            certificate: ApplicationCertificate
-        ): Builder {
+        fun certificateEcdsaP256(certificate: ApplicationCertificate): Builder {
             val gblType = GblType.CERTIFICATE_ECDSA_P256
 
             val tag = GblCertificateEcdsaP256(
@@ -229,9 +214,7 @@ class GblParser {
             return this
         }
 
-        fun addVersionDependency(
-            dependencyData: ByteArray
-        ): Builder {
+        fun versionDependency(dependencyData: ByteArray): Builder {
             val gblType = GblType.VERSION_DEPENDENCY
 
             val tag = DefaultTag(
@@ -253,6 +236,282 @@ class GblParser {
             return this
         }
 
+        fun bootloader(
+            bootloaderVersion: UInt,
+            address: UInt,
+            data: ByteArray
+        ): Builder {
+            val gblType = GblType.BOOTLOADER
+
+            val tag = GblBootloader(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = (8U + data.size.toUInt())
+                ),
+                tagType = gblType,
+                bootloaderVersion = bootloaderVersion,
+                address = address,
+                data = data,
+                tagData = ByteArray(0)
+            )
+
+            val tagData = generateBootloaderTagData(bootloaderVersion, address, data)
+
+            val bootloader = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(bootloader)
+            return this
+        }
+
+        fun metadata(metaData: ByteArray): Builder {
+            val gblType = GblType.METADATA
+
+            val tag = GblMetadata(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = metaData.size.toUInt()
+                ),
+                tagType = gblType,
+                metaData = metaData,
+                tagData = ByteArray(0)
+            )
+
+            val tagData = tag.generateData()
+
+            val metadata = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(metadata)
+            return this
+        }
+
+        fun prog(flashStartAddress: UInt, data: ByteArray): Builder {
+            val gblType = GblType.PROG
+
+            val tag = GblProg(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = (4U + data.size.toUInt())
+                ),
+                tagType = gblType,
+                flashStartAddress = flashStartAddress,
+                data = data,
+                tagData = ByteArray(0)
+            )
+
+            val tagData = generateProgTagData(flashStartAddress, data)
+
+            val prog = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(prog)
+            return this
+        }
+
+        fun progLz4(
+            flashStartAddress: UInt,
+            compressedData: ByteArray,
+            decompressedSize: UInt
+        ): Builder {
+            val gblType = GblType.PROG_LZ4
+
+            val tagDataSize = 8U + compressedData.size.toUInt()
+
+            val tag = GblProgLz4(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = tagDataSize
+                ),
+                tagType = gblType,
+                tagData = ByteArray(0)
+            )
+
+            val tagData = generateProgLz4TagData(flashStartAddress, compressedData, decompressedSize)
+
+            val progLz4 = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(progLz4)
+            return this
+        }
+
+        fun progLzma(
+            flashStartAddress: UInt,
+            compressedData: ByteArray,
+            decompressedSize: UInt
+        ): Builder {
+            val gblType = GblType.PROG_LZMA
+
+            val tagDataSize = 8U + compressedData.size.toUInt()
+
+            val tag = GblProgLzma(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = tagDataSize
+                ),
+                tagType = gblType,
+                tagData = ByteArray(0)
+            )
+
+            val tagData = generateProgLzmaTagData(flashStartAddress, compressedData, decompressedSize)
+
+            val progLzma = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(progLzma)
+            return this
+        }
+
+        fun seUpgrade(version: UInt, data: ByteArray): Builder {
+            val gblType = GblType.SE_UPGRADE
+
+            val blobSize = data.size.toUInt()
+
+            val tag = GblSeUpgrade(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = (8U + blobSize)
+                ),
+                tagType = gblType,
+                blobSize = blobSize,
+                version = version,
+                data = data,
+                tagData = ByteArray(0)
+            )
+
+            val tagData = generateSeUpgradeTagData(blobSize, version, data)
+
+            val seUpgrade = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(seUpgrade)
+            return this
+        }
+
+        fun application(
+            type: UInt = ApplicationData.APP_TYPE,
+            version: UInt = ApplicationData.APP_VERSION,
+            capabilities: UInt = ApplicationData.APP_CAPABILITIES,
+            productId: UByte = ApplicationData.APP_PRODUCT_ID,
+            tagData: ByteArray = ByteArray(0)
+        ): Builder {
+            val gblType = GblType.APPLICATION
+
+            val tag = GblApplication(
+                tagHeader = TagHeader(
+                    id = gblType.value,
+                    length = (GblApplication.APP_LENGTH + tagData.size).toUInt()
+                ),
+                tagType = gblType,
+                tagData = tagData,
+                applicationData = ApplicationData(
+                    type = type,
+                    version = version,
+                    capabilities = capabilities,
+                    productId = productId,
+                )
+            )
+
+            val tagData = tag.generateData()
+
+            val application = tag.copy(
+                tagData = tagData
+            )
+
+            gblTags.add(application)
+            return this
+        }
+
+        fun eraseProg(): Builder {
+            val gblType = GblType.ERASEPROG
+
+            val tag = GblEraseProg(
+                tagHeader = TagHeader(
+                    id = gblType.value.toUInt(),
+                    length = HEADER_SIZE.toUInt()
+                ),
+                tagType = gblType,
+                tagData = ByteArray(0),
+            )
+
+            val eraseProg = tag.copy(
+                tagData = tag.generateData()
+            )
+
+            gblTags.add(eraseProg)
+            return this
+        }
+
+        fun tag(tag: String): Builder {
+            this.buildTag = tag
+            return this
+        }
+
+        fun build(): Int {
+            val currentTags = gblTags.toList()
+            val id = nextId++
+            savedBuildersById[id] = currentTags
+
+            buildTag?.let { tag ->
+                savedBuilders[tag] = currentTags
+            }
+
+            return id
+        }
+
+        fun get(): List<Tag> {
+            return gblTags.toList()
+        }
+
+        fun get(id: Int): List<Tag>? {
+            return savedBuildersById[id]
+        }
+
+        fun get(tag: String): List<Tag>? {
+            return savedBuilders[tag]
+        }
+
+        fun getAll(): Map<String, List<Tag>> {
+            return savedBuilders.toMap()
+        }
+
+        fun getAllById(): Map<Int, List<Tag>> {
+            return savedBuildersById.toMap()
+        }
+
+        fun save() {
+            buildTag?.let { tag ->
+                savedBuilders[tag] = gblTags.toList()
+            }
+        }
+
+        fun buildToList(): List<Tag> {
+            val tagsWithoutEnd = gblTags.filter { it !is GblEnd }
+            val endTag = createEndTagWithCrc(tagsWithoutEnd)
+            return tagsWithoutEnd + endTag
+        }
+
+        fun buildToByteArray(): ByteArray {
+            val tagsWithoutEnd = gblTags.filter { it !is GblEnd }
+
+            println("tagsWithoutEnd $tagsWithoutEnd")
+
+            val endTag = createEndTagWithCrc(tagsWithoutEnd)
+            println("endTag $endTag")
+
+            val finalTags = tagsWithoutEnd + endTag
+
+            println("finalTags $finalTags")
+
+            return encodeTags(finalTags)
+        }
 
         private fun generateEncryptionInitTagData(
             msgLen: UInt,
@@ -295,257 +554,6 @@ class GblParser {
             result[7] = certificate.signature.toByte()
 
             return result
-        }
-
-        fun addBootloader(
-            bootloaderVersion: UInt,
-            address: UInt,
-            data: ByteArray
-        ): Builder {
-            val gblType = GblType.BOOTLOADER
-
-            val tag = GblBootloader(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = (8U + data.size.toUInt())
-                ),
-                tagType = gblType,
-                bootloaderVersion = bootloaderVersion,
-                address = address,
-                data = data,
-                tagData = ByteArray(0)
-            )
-
-            val tagData = generateBootloaderTagData(bootloaderVersion, address, data)
-
-            val bootloader = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(bootloader)
-            return this
-        }
-
-        fun addMetadata(
-            metaData: ByteArray
-        ): Builder {
-            val gblType = GblType.METADATA
-
-            val tag = GblMetadata(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = metaData.size.toUInt()
-                ),
-                tagType = gblType,
-                metaData = metaData,
-                tagData = ByteArray(0)
-            )
-
-            val tagData = tag.generateData()
-
-            val metadata = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(metadata)
-            return this
-        }
-
-        fun addProg(
-            flashStartAddress: UInt,
-            data: ByteArray
-        ): Builder {
-            val gblType = GblType.PROG
-
-            val tag = GblProg(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = (4U + data.size.toUInt())
-                ),
-                tagType = gblType,
-                flashStartAddress = flashStartAddress,
-                data = data,
-                tagData = ByteArray(0)
-            )
-
-            val tagData = generateProgTagData(flashStartAddress, data)
-
-            val prog = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(prog)
-            return this
-        }
-
-        fun addProgLz4(
-            flashStartAddress: UInt,
-            compressedData: ByteArray,
-            decompressedSize: UInt
-        ): Builder {
-            val gblType = GblType.PROG_LZ4
-
-            val tagDataSize = 8U + compressedData.size.toUInt()
-
-            val tag = GblProgLz4(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = tagDataSize
-                ),
-                tagType = gblType,
-                tagData = ByteArray(0)
-            )
-
-            val tagData = generateProgLz4TagData(flashStartAddress, compressedData, decompressedSize)
-
-            val progLz4 = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(progLz4)
-            return this
-        }
-
-        fun addProgLzma(
-            flashStartAddress: UInt,
-            compressedData: ByteArray,
-            decompressedSize: UInt
-        ): Builder {
-            val gblType = GblType.PROG_LZMA
-
-            val tagDataSize =
-                8U + compressedData.size.toUInt()
-
-            val tag = GblProgLzma(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = tagDataSize
-                ),
-                tagType = gblType,
-                tagData = ByteArray(0)
-            )
-
-            val tagData = generateProgLzmaTagData(flashStartAddress, compressedData, decompressedSize)
-
-            val progLzma = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(progLzma)
-            return this
-        }
-
-        fun addSeUpgrade(
-            version: UInt,
-            data: ByteArray
-        ): Builder {
-            val gblType = GblType.SE_UPGRADE
-
-            val blobSize = data.size.toUInt()
-
-            val tag = GblSeUpgrade(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = (8U + blobSize)
-                ),
-                tagType = gblType,
-                blobSize = blobSize,
-                version = version,
-                data = data,
-                tagData = ByteArray(0)
-            )
-
-            val tagData = generateSeUpgradeTagData(blobSize, version, data)
-
-            val seUpgrade = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(seUpgrade)
-            return this
-        }
-
-        private fun addEndTag(): Builder {
-            val endTag = createEndTagWithCrc(this.gblTags)
-
-            gblTags.add(endTag)
-            return this
-        }
-
-        fun addApplication(
-            type: UInt = ApplicationData.APP_TYPE,
-            version: UInt = ApplicationData.APP_VERSION,
-            capabilities: UInt = ApplicationData.APP_CAPABILITIES,
-            productId: UByte = ApplicationData.APP_PRODUCT_ID,
-            tagData: ByteArray = ByteArray(0)
-        ): Builder {
-            val gblType = GblType.APPLICATION
-
-            val tag = GblApplication(
-                tagHeader = TagHeader(
-                    id = gblType.value,
-                    length = (GblApplication.APP_LENGTH + tagData.size).toUInt()
-                ),
-                tagType = gblType,
-                tagData = tagData,
-                applicationData = ApplicationData(
-                    type = type,
-                    version = version,
-                    capabilities = capabilities,
-                    productId = productId,
-                )
-            )
-
-            println("APP TAG $tag")
-
-            val tagData = tag.generateData()
-
-            val application = tag.copy(
-                tagData = tagData
-            )
-
-            gblTags.add(application)
-            return this
-        }
-
-        fun addEraseProg(): Builder {
-            val gblType = GblType.ERASEPROG
-
-            val tag = GblEraseProg(
-                tagHeader = TagHeader(
-                    id = gblType.value.toUInt(),
-                    length = HEADER_SIZE.toUInt()
-                ),
-                tagType = gblType,
-                tagData = ByteArray(0),
-            )
-
-            val eraseProg = tag.copy(
-                tagData = tag.generateData()
-            )
-
-            gblTags.add(eraseProg)
-            return this
-        }
-
-        fun buildToList(): List<Tag> {
-            this.addEndTag()
-            return gblTags.toList()
-        }
-
-        fun buildToByteArray(): ByteArray {
-            val tagsWithoutEnd = gblTags.filter { it !is GblEnd }
-
-            println("tagsWithoutEnd $tagsWithoutEnd")
-
-            val endTag = createEndTagWithCrc(tagsWithoutEnd)
-            println("endTag $endTag")
-
-            val finalTags = tagsWithoutEnd + endTag
-
-            println("finalTags $finalTags")
-
-            return encodeTags(finalTags)
         }
 
         private fun generateBootloaderTagData(
