@@ -63,13 +63,15 @@ jobs:
             echo "TAG_NAME=lib-$VERSION" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get JAR name
-        id: jar_info
+      - name: Verify JAR file exists
         run: |
-          JAR_FILE=$(find library/build/libs -name "*.jar" -type f | head -1)
-          JAR_NAME=$(basename "$JAR_FILE")
-          echo "JAR_PATH=$JAR_FILE" >> $GITHUB_OUTPUT
-          echo "JAR_NAME=$JAR_NAME" >> $GITHUB_OUTPUT
+          if [ ! -f "library/build/libs/gbl-1.0.jar" ]; then
+            echo "❌ Expected JAR file not found: library/build/libs/gbl-1.0.jar"
+            echo "Available files:"
+            ls -la library/build/libs/ || echo "No libs directory found"
+            exit 1
+          fi
+          echo "✅ JAR file found: library/build/libs/gbl-1.0.jar"
 
       - name: Create Release
         id: create_release
@@ -78,14 +80,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
-          release_name: Library ${{ steps.get_version.outputs.VERSION }}
+          release_name: GBL Library ${{ steps.get_version.outputs.VERSION }}
           body: |
-            # Library ${{ steps.get_version.outputs.VERSION }}
-          
-            Release of the main library.
+            # GBL Library ${{ steps.get_version.outputs.VERSION }}
+            
+            Release of the GBL library for working with GBL files.
             
             ## 📦 Files in this release:
-            - `${{ steps.jar_info.outputs.JAR_NAME }}` - library JAR file
+            - `gbl-1.0.jar` - main library JAR file
             
             ## 📊 Code Quality:
             - ✅ All tests passed
@@ -96,19 +98,25 @@ jobs:
             ### Gradle:
             ```gradle
             dependencies {
-            implementation files('path/to/${{ steps.jar_info.outputs.JAR_NAME }}')
+                implementation files('path/to/gbl-1.0.jar')
             }
             ```
             
             ### Maven:
             ```xml
             <dependency>
-            <groupId>org.example</groupId>
-            <artifactId>library</artifactId>
-            <version>${{ steps.get_version.outputs.VERSION }}</version>
-            <scope>system</scope>
-            <systemPath>/path/to/${{ steps.jar_info.outputs.JAR_NAME }}</systemPath>
+                <groupId>org.example</groupId>
+                <artifactId>gbl</artifactId>
+                <version>1.0</version>
+                <scope>system</scope>
+                <systemPath>/path/to/gbl-1.0.jar</systemPath>
             </dependency>
+            ```
+            
+            ### Direct Usage:
+            ```bash
+            # Add to classpath
+            java -cp gbl-1.0.jar:your-app.jar com.yourapp.Main
             ```
             
             ## 📋 Changes:
@@ -123,8 +131,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.jar_info.outputs.JAR_PATH }}
-          asset_name: ${{ steps.jar_info.outputs.JAR_NAME }}
+          asset_path: ./library/build/libs/gbl-1.0.jar
+          asset_name: gbl-1.0.jar
           asset_content_type: application/java-archive
 
       - name: Upload Coverage Report (if exists)
@@ -137,3 +145,22 @@ jobs:
           asset_path: ./library/build/reports/jacoco/test/jacocoTestReport.xml
           asset_name: coverage-report.xml
           asset_content_type: application/xml
+
+      - name: Upload HTML Coverage Report (if exists)
+        if: hashFiles('library/build/reports/jacoco/test/html/index.html') != ''
+        run: |
+          cd library/build/reports/jacoco/test/html
+          zip -r ../../../../../coverage-html-report.zip .
+          cd ../../../../../
+        continue-on-error: true
+
+      - name: Upload HTML Coverage Report ZIP
+        if: hashFiles('coverage-html-report.zip') != ''
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./coverage-html-report.zip
+          asset_name: coverage-html-report.zip
+          asset_content_type: application/zip

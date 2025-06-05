@@ -38,17 +38,27 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-gbl-ninja-${{ hashFiles('gbl-ninja/**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-gbl-ninja-${{ hashFiles('samples/**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-gbl-ninja-
 
       - name: Grant execute permission for gradlew
-        run: chmod +x gbl-ninja/gradlew
+        run: chmod +x samples/gradlew
         working-directory: ./
 
       - name: Build GBL Ninja JAR
         run: ./gradlew clean jar
-        working-directory: ./gbl-ninja
+        working-directory: ./samples
+
+      - name: Verify JAR file exists
+        run: |
+          if [ ! -f "samples/build/libs/gbl-ninja.jar" ]; then
+            echo "❌ Expected JAR file not found: samples/build/libs/gbl-ninja.jar"
+            echo "Available files:"
+            ls -la samples/build/libs/ || echo "No libs directory found"
+            exit 1
+          fi
+          echo "✅ JAR file found: samples/build/libs/gbl-ninja.jar"
 
       - name: Get version from tag
         id: get_version
@@ -66,12 +76,16 @@ jobs:
       - name: Create release directory
         run: |
           mkdir -p release-gbl-ninja
-          cp gbl-ninja/build/libs/gbl-ninja.jar release-gbl-ninja/
-          cp gbl-ninja/gblninja.bat release-gbl-ninja/
-          cp gbl-ninja/gblninja.sh release-gbl-ninja/
-          # Додаємо README якщо є
-          if [ -f "gbl-ninja/README.md" ]; then
-            cp gbl-ninja/README.md release-gbl-ninja/
+          cp samples/build/libs/gbl-ninja.jar release-gbl-ninja/
+          cp samples/gblninja.bat release-gbl-ninja/
+          cp samples/gblninja.sh release-gbl-ninja/
+          # Add README if exists
+          if [ -f "samples/README.md" ]; then
+            cp samples/README.md release-gbl-ninja/
+          fi
+          # Add main project README if exists
+          if [ -f "README.md" ]; then
+            cp README.md release-gbl-ninja/README-main.md
           fi
 
       - name: Create ZIP archive
@@ -119,6 +133,19 @@ jobs:
             - `-c` / `--gblcreate` - create new GBL file
             - `-f` / `--file` - specify file to process
             - `-v` / `--version` - show version
+            
+            ## 📋 Quick Start:
+            ```bash
+            # Extract the archive
+            unzip gbl-ninja-${{ steps.get_version.outputs.VERSION }}.zip
+            cd gbl-ninja-${{ steps.get_version.outputs.VERSION }}/
+            
+            # Make executable (Linux/macOS)
+            chmod +x gblninja.sh
+            
+            # Run
+            ./gblninja.sh --help
+            ```
 
           draft: false
           prerelease: false
