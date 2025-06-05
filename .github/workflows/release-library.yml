@@ -46,10 +46,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x library/gradlew
 
-      - name: Run tests and build Library JAR
-        run: ./gradlew clean test jacocoTestReport jar
-        working-directory: ./library
-
       - name: Get version from tag
         id: get_version
         run: |
@@ -88,10 +84,6 @@ jobs:
             
             ## 📦 Files in this release:
             - `gbl-1.0.jar` - main library JAR file
-            
-            ## 📊 Code Quality:
-            - ✅ All tests passed
-            - 📈 Code coverage report generated
             
             ## 🔧 Usage:
             
@@ -134,33 +126,3 @@ jobs:
           asset_path: ./library/build/libs/gbl-1.0.jar
           asset_name: gbl-1.0.jar
           asset_content_type: application/java-archive
-
-      - name: Upload Coverage Report (if exists)
-        if: hashFiles('library/build/reports/jacoco/test/jacocoTestReport.xml') != ''
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./library/build/reports/jacoco/test/jacocoTestReport.xml
-          asset_name: coverage-report.xml
-          asset_content_type: application/xml
-
-      - name: Upload HTML Coverage Report (if exists)
-        if: hashFiles('library/build/reports/jacoco/test/html/index.html') != ''
-        run: |
-          cd library/build/reports/jacoco/test/html
-          zip -r ../../../../../coverage-html-report.zip .
-          cd ../../../../../
-        continue-on-error: true
-
-      - name: Upload HTML Coverage Report ZIP
-        if: hashFiles('coverage-html-report.zip') != ''
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./coverage-html-report.zip
-          asset_name: coverage-html-report.zip
-          asset_content_type: application/zip
