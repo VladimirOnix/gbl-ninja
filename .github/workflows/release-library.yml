@@ -46,20 +46,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x library/gradlew
 
-      - name: Verify JAR file exists
-        run: |
-          if [ ! -f "library/build/libs/gbl-1.0.jar" ]; then
-            echo "❌ Expected JAR file not found: library/build/libs/gbl-1.0.jar"
-            echo "Available files in library/build/libs/:"
-            ls -la library/build/libs/ 2>/dev/null || echo "No libs directory found"
-            echo "Available files in library/build/:"
-            ls -la library/build/ 2>/dev/null || echo "No build directory found"
-            echo "Checking for any JAR files:"
-            find library -name "*.jar" -type f 2>/dev/null || echo "No JAR files found"
-            exit 1
-          fi
-          echo "✅ JAR file found: library/build/libs/gbl-1.0.jar"
-
       - name: Get version from tag
         id: get_version
         run: |
@@ -88,10 +74,6 @@ jobs:
             
             ## 📦 Files in this release:
             - `gbl-1.0.jar` - main library JAR file
-            
-            ## 📊 Code Quality:
-            - ✅ All tests passed
-            - 📈 Code coverage report generated
             
             ## 🔧 Usage:
             
