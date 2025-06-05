@@ -101,7 +101,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
-          release_name: GBL Ninja ${{ steps.get_version.outputs.VERSION }}
+          release_name: GBL Ninja Sample
           body: |
             # GBL Ninja ${{ steps.get_version.outputs.VERSION }}
             
@@ -132,7 +132,6 @@ jobs:
             - `-i` / `--gblinfo` - get information about GBL file
             - `-c` / `--gblcreate` - create new GBL file
             - `-f` / `--file` - specify file to process
-            - `-v` / `--version` - show version
             
             ## 📋 Quick Start:
             ```bash

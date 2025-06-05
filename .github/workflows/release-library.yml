@@ -51,15 +51,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
-          release_name: GBL Library ${{ steps.get_version.outputs.VERSION }}
+          release_name: GBL Ninja Library
           body: |
-            # GBL Library ${{ steps.get_version.outputs.VERSION }}
-            
             Automatic library build from main branch.
           draft: false
           prerelease: false
 
-      # Попробуем найти файл разными способами
       - name: Upload JAR (attempt 1 - exact name)
         continue-on-error: true
         uses: actions/upload-release-asset@v1
@@ -69,26 +66,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./library/build/libs/gbl-1.0.jar
           asset_name: gbl-1.0.jar
-          asset_content_type: application/java-archive
-
-      - name: Upload JAR (attempt 2 - library name)
-        continue-on-error: true
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./library/build/libs/library-1.0.jar
-          asset_name: library-1.0.jar
-          asset_content_type: application/java-archive
-
-      - name: Upload JAR (attempt 3 - library name without version)
-        continue-on-error: true
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./library/build/libs/library.jar
-          asset_name: library.jar
           asset_content_type: application/java-archive
