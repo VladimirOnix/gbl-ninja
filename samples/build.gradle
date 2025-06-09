@@ -43,9 +43,7 @@ jar {
     archiveVersion.set("")
 
     manifest {
-        attributes(
-                'Main-Class': 'SamplesKt'
-        )
+        attributes["Main-Class"] = "gblninja.SampleKt"
     }
 
     from {

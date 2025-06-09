@@ -6,7 +6,7 @@ interface Tag {
     val tagType: GblType
     fun copy(): Tag
 
-    fun generateData(): ByteArray {
+    fun content(): ByteArray {
         val tagData = generateTagData(this)
 
         return tagData
