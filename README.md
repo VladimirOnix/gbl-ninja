@@ -26,15 +26,14 @@ dependencies {
 }
 ```
 
-
 ### Basic Example
 
 ```kotlin
-import GblParser
+import Gbl
 import results.ParseResult
 
 // Parse existing GBL file
-val parser = GblParser()
+val parser = Gbl()
 val result = parser.parseByteArray(gblFileBytes)
 
 when (result) {
@@ -47,7 +46,7 @@ when (result) {
 }
 
 // Create new GBL file
-val builder = GblParser.GblBuilder.create()
+val builder = Gbl.GblBuilder.create()
     .application(type = 32U, version = 0x10000U)
     .prog(flashStartAddress = 0x1000U, data = firmwareData)
 
@@ -76,6 +75,7 @@ GBL (Gecko Bootloader) is a binary file format used for firmware updates on Sili
 - **Validate** file integrity with CRC checks
 - **Support** for compression (LZ4, LZMA)
 - **Security** features (ECDSA signatures, encryption)
+- **Serialize** tags to JSON for storage and transfer
 
 ## License
 

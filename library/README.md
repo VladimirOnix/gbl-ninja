@@ -12,6 +12,7 @@ Kotlin library for parsing and creating files in the GBL (Gecko Bootloader) form
 * **Compression** support for LZ4 and LZMA
 * **Security** features including ECDSA signatures and encryption
 * **Container system** for advanced tag management
+* **Serialization** to JSON for storage and transfer
 
 ## Installation
 
@@ -31,7 +32,7 @@ dependencies {
 ### Parsing a GBL File
 
 ```kotlin
-val gblParser = GblParser()
+val gblParser = Gbl()
 
 val file = File("firmware.gbl")
 val byteArray = file.readBytes()
@@ -55,7 +56,7 @@ when (parseResult) {
 ### Creating a New GBL File
 
 ```kotlin
-val gblBuilder = GblParser.GblBuilder.create()
+val gblBuilder = Gbl.GblBuilder.create()
     .application(
         type = 32U,
         version = 0x10000U,
@@ -82,7 +83,7 @@ val certificate = ApplicationCertificate(
     signature = 0U
 )
 
-val gblBuilder = GblParser.GblBuilder.create()
+val gblBuilder = Gbl.GblBuilder.create()
     .application(type = 32U, version = 0x10000U)
     .certificateEcdsaP256(certificate)
     .prog(flashStartAddress = 0x1000U, data = firmwareData)
@@ -110,6 +111,25 @@ if (parseResult is ParseResult.Success) {
     val modifiedGblBytes = gblParser.encode(tags)
     File("modified_firmware.gbl").writeBytes(modifiedGblBytes)
 }
+```
+
+### Serialization
+
+```kotlin
+val builder = Gbl.GblBuilder.create()
+    .application(type = 32U, version = 0x10000U)
+    .prog(flashStartAddress = 0x1000U, data = firmwareData)
+
+// Serialize entire container to JSON
+val json = builder.serialize()
+println(json)
+
+// Serialize specific tag
+val appTagJson = builder.serializeTag(GblType.APPLICATION)
+
+// Deserialize from JSON
+val tags = Gbl.GblBuilder.deserialize(json)
+val appTag = Gbl.GblBuilder.deserializeTag(appTagJson)
 ```
 
 ## GBL Format Overview
@@ -161,18 +181,18 @@ The file always ends with an **END** tag containing a CRC32 checksum for integri
 
 ### Core Classes
 
-#### GblParser
+#### Gbl
 
 Main parser class for reading and writing GBL files.
 
 ```kotlin
-class GblParser {
+class Gbl {
     fun parseByteArray(byteArray: ByteArray): ParseResult
     fun encode(tags: List<Tag>): ByteArray
 }
 ```
 
-#### GblBuilder
+#### Gbl.GblBuilder
 
 Builder class for creating GBL files with a fluent API.
 
@@ -213,14 +233,15 @@ class GblBuilder {
     fun isEmpty(): Boolean
     fun getTagTypes(): Set<GblType>
     
-    // Save/load functionality
-    fun tag(tag: String): GblBuilder
-    fun build(): Int
-    fun save()
-    fun get(id: Int): List<Tag>?
-    fun get(tag: String): List<Tag>?
-    fun getAll(): Map<String, List<Tag>>
-    fun getAllById(): Map<Int, List<Tag>>
+    // Serialization
+    fun serialize(): String
+    fun serializeTag(tagType: GblType): String?
+    
+    // Static methods
+    companion object {
+        fun deserialize(json: String): List<Tag>
+        fun deserializeTag(json: String): Tag?
+    }
 }
 ```
 
@@ -290,7 +311,7 @@ The library includes a sophisticated container system for managing GBL tags:
 - **Automatic management** of protected tags (HEADER_V3 and END)
 - **Validation** of tag integrity and relationships
 - **Error handling** with detailed error codes
-- **Flexible building** with save/restore functionality
+- **Flexible building** capabilities
 
 ### Protected Tags
 
@@ -305,7 +326,7 @@ You cannot manually add or remove these tags - they are managed by the container
 ### Tag Management
 
 ```kotlin
-val builder = GblParser.GblBuilder.create()
+val builder = Gbl.GblBuilder.create()
 
 // Check if tag exists
 if (builder.hasTag(GblType.APPLICATION)) {
@@ -323,25 +344,19 @@ when (result) {
 val tagTypes = builder.getTagTypes()
 ```
 
-### Save/Restore Functionality
+### JSON Serialization
 
 ```kotlin
-val builder = GblParser.GblBuilder.create()
-    .application(type = 32U)
-    .prog(flashStartAddress = 0x1000U, data = data1)
+// Serialize container
+val json = builder.serialize()
+// Result: {"tags":[{"tagType":"APPLICATION","tagId":4098957556,"length":13,"tagData":[...]}]}
 
-// Save current state with a tag
-builder.tag("version1").save()
+// Deserialize container
+val tags = Gbl.GblBuilder.deserialize(json)
 
-// Continue building
-builder.prog(flashStartAddress = 0x2000U, data = data2)
-
-// Save another state
-val id = builder.build()
-
-// Restore previous state
-val version1Tags = builder.get("version1")
-val savedTags = builder.get(id)
+// Serialize specific tag
+val appJson = builder.serializeTag(GblType.APPLICATION)
+val appTag = Gbl.GblBuilder.deserializeTag(appJson!!)
 ```
 
 ## File Processing Flow
