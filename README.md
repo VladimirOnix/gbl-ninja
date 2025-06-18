@@ -6,14 +6,16 @@
 
 This repository contains:
 
-- **[library/](library/)** - Core Kotlin library for parsing and creating GBL files
+- **[kotlin-library/](kotlin-library/)** - Core Kotlin library for parsing and creating GBL files
+- **[python-library/](python-library/)** - Python implementation of the GBL library
 - **[gbl-tool-cli/](gbl-tool-cli/)** - Command-line tool for GBL file manipulation
 
-## Quick Start
+## Language Support
 
-### Library Usage
+Choose your preferred implementation:
 
-Add the library to your project:
+### Kotlin Library (Original)
+Full-featured implementation with advanced container management and JSON serialization.
 
 **Gradle (Kotlin DSL)**:
 ```kotlin
@@ -26,7 +28,16 @@ dependencies {
 }
 ```
 
-### Basic Example
+### Python Library
+Python port of the Kotlin library with identical functionality.
+
+```bash
+pip install gbl-ninja-python
+```
+
+## Quick Start
+
+### Kotlin Example
 
 ```kotlin
 import Gbl
@@ -53,10 +64,34 @@ val builder = Gbl.GblBuilder.create()
 val gblBytes = builder.buildToByteArray()
 ```
 
+### Python Example
+
+```python
+from gbl import Gbl
+from results.parse_result import ParseResult
+
+# Parse existing GBL file
+gbl_parser = Gbl()
+result = gbl_parser.parse_byte_array(gbl_data)
+
+if isinstance(result, ParseResult.Success):
+    print(f"Successfully parsed {len(result.result_list)} tags")
+else:
+    print(f"Parse failed: {result.error}")
+
+# Create new GBL file
+builder = Gbl().GblBuilder.create()
+builder.application(type_val=32, version=0x10000)
+builder.prog(flash_start_address=0x1000, data=firmware_data)
+
+gbl_bytes = builder.build_to_byte_array()
+```
+
 ## Documentation
 
-- **[Library Documentation](library/README.md)** - Kotlin library for parsing and creating GBL files
-- **[CLI Tool Documentation](gbl-tool-cli/README.md)** - Command-line interface for GBL file manipulation
+- **[Kotlin Library Documentation](kotlin-library/README.md)** - Original Kotlin library
+- **[Python Library Documentation](python-library/README.md)** - Python implementation
+- **[CLI Tool Documentation](gbl-tool-cli/README.md)** - Command-line interface
 
 ## About GBL Format
 
@@ -75,6 +110,7 @@ GBL (Gecko Bootloader) is a binary file format used for firmware updates on Sili
 - **Validate** file integrity with CRC checks
 - **Support** for compression (LZ4, LZMA)
 - **Security** features (ECDSA signatures, encryption)
+- **Multi-language** support (Kotlin, Python)
 
 ## License
 
