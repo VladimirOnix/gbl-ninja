@@ -7,7 +7,7 @@
 This repository contains:
 
 - **[library/](library/)** - Core Kotlin library for parsing and creating GBL files
-- **[gbl-tool-cli/](tool/)** - Command-line tool for GBL file manipulation *(coming soon)*
+- **[gbl-tool-cli/](gbl-tool-cli/)** - Command-line tool for GBL file manipulation *(coming soon)*
 
 ## Quick Start
 
