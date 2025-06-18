@@ -20,10 +20,6 @@ import tag.type.encryption.GblEncryptionData
 import tag.type.encryption.GblEncryptionInitAesCcm
 import utils.append
 import utils.putUIntToByteArray
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 
 class Gbl {
     companion object {
@@ -82,19 +78,6 @@ class Gbl {
 
         return encodeTags(finalTags)
     }
-
-    @Serializable
-    data class SerializableTag(
-        val tagType: String,
-        val tagId: UInt,
-        val length: UInt,
-        val tagData: List<Byte>
-    )
-
-    @Serializable
-    data class SerializableContainer(
-        val tags: List<SerializableTag>
-    )
 
     class GblBuilder {
         private val container = TagContainer()
@@ -338,69 +321,6 @@ class Gbl {
                 list.data
             } else {
                 emptyList()
-            }
-        }
-
-        // Serialization methods
-        fun serialize(): String {
-            val tags = get()
-            val serializableTags = tags.map { tag ->
-                SerializableTag(
-                    tagType = tag.tagType.name,
-                    tagId = tag.tagType.value,
-                    length = tag.content().size.toUInt(),
-                    tagData = tag.content().toList()
-                )
-            }
-            val container = SerializableContainer(serializableTags)
-            return Json.encodeToString(container)
-        }
-
-        fun serializeTag(tagType: GblType): String? {
-            val tag = getTag(tagType) ?: return null
-            val serializableTag = SerializableTag(
-                tagType = tag.tagType.name,
-                tagId = tag.tagType.value,
-                length = tag.content().size.toUInt(),
-                tagData = tag.content().toList()
-            )
-            return Json.encodeToString(serializableTag)
-        }
-
-        companion object {
-            fun deserialize(json: String): List<Tag> {
-                try {
-                    val container = Json.decodeFromString<SerializableContainer>(json)
-                    return container.tags.mapNotNull { serializableTag ->
-                        deserializeTag(serializableTag)
-                    }
-                } catch (e: Exception) {
-                    return emptyList()
-                }
-            }
-
-            fun deserializeTag(json: String): Tag? {
-                return try {
-                    val serializableTag = Json.decodeFromString<SerializableTag>(json)
-                    deserializeTag(serializableTag)
-                } catch (e: Exception) {
-                    null
-                }
-            }
-
-            private fun deserializeTag(serializableTag: SerializableTag): Tag? {
-                return try {
-                    val tagType = GblType.valueOf(serializableTag.tagType)
-                    val tagData = serializableTag.tagData.toByteArray()
-
-                    parseTagType(
-                        tagId = serializableTag.tagId,
-                        length = serializableTag.length,
-                        byteArray = tagData
-                    )
-                } catch (e: Exception) {
-                    null
-                }
             }
         }
 

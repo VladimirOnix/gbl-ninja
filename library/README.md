@@ -113,25 +113,6 @@ if (parseResult is ParseResult.Success) {
 }
 ```
 
-### Serialization
-
-```kotlin
-val builder = Gbl.GblBuilder.create()
-    .application(type = 32U, version = 0x10000U)
-    .prog(flashStartAddress = 0x1000U, data = firmwareData)
-
-// Serialize entire container to JSON
-val json = builder.serialize()
-println(json)
-
-// Serialize specific tag
-val appTagJson = builder.serializeTag(GblType.APPLICATION)
-
-// Deserialize from JSON
-val tags = Gbl.GblBuilder.deserialize(json)
-val appTag = Gbl.GblBuilder.deserializeTag(appTagJson)
-```
-
 ## GBL Format Overview
 
 The GBL format is a container format designed by Silicon Labs for firmware updates. It consists of a sequence of tags, where each tag serves a specific purpose in the update process.
@@ -232,16 +213,6 @@ class GblBuilder {
     fun size(): Int
     fun isEmpty(): Boolean
     fun getTagTypes(): Set<GblType>
-    
-    // Serialization
-    fun serialize(): String
-    fun serializeTag(tagType: GblType): String?
-    
-    // Static methods
-    companion object {
-        fun deserialize(json: String): List<Tag>
-        fun deserializeTag(json: String): Tag?
-    }
 }
 ```
 
@@ -342,21 +313,6 @@ when (result) {
 
 // Get all tag types
 val tagTypes = builder.getTagTypes()
-```
-
-### JSON Serialization
-
-```kotlin
-// Serialize container
-val json = builder.serialize()
-// Result: {"tags":[{"tagType":"APPLICATION","tagId":4098957556,"length":13,"tagData":[...]}]}
-
-// Deserialize container
-val tags = Gbl.GblBuilder.deserialize(json)
-
-// Serialize specific tag
-val appJson = builder.serializeTag(GblType.APPLICATION)
-val appTag = Gbl.GblBuilder.deserializeTag(appJson!!)
 ```
 
 ## File Processing Flow

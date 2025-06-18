@@ -55,8 +55,8 @@ val gblBytes = builder.buildToByteArray()
 
 ## Documentation
 
-- **[Library Documentation](library/README.md)** - Detailed API reference and examples
-- **[Gbl Tool Documentation](gbl-tool-cli/README.md)** - Detailed API reference and examples
+- **[Library Documentation](library/README.md)** - Kotlin library for parsing and creating GBL files
+- **[CLI Tool Documentation](gbl-tool-cli/README.md)** - Command-line interface for GBL file manipulation
 
 ## About GBL Format
 
@@ -75,7 +75,6 @@ GBL (Gecko Bootloader) is a binary file format used for firmware updates on Sili
 - **Validate** file integrity with CRC checks
 - **Support** for compression (LZ4, LZMA)
 - **Security** features (ECDSA signatures, encryption)
-- **Serialize** tags to JSON for storage and transfer
 
 ## License
 
