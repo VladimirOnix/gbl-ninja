@@ -194,7 +194,3 @@ print(f"Created firmware file: {len(gbl_data)} bytes")
 ## License
 
 Apache License 2.0
-
-## Credits
-
-Converted from the original Kotlin GBL-Ninja library.
