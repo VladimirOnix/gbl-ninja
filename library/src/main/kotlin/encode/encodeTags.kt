@@ -1,7 +1,7 @@
 package encode
 
-import GblParser.Companion.TAG_ID_SIZE
-import GblParser.Companion.TAG_LENGTH_SIZE
+import Gbl.Companion.TAG_ID_SIZE
+import Gbl.Companion.TAG_LENGTH_SIZE
 import tag.type.application.GblApplication
 import tag.type.certificate.GblCertificateEcdsaP256
 import tag.type.certificate.GblSignatureEcdsaP256

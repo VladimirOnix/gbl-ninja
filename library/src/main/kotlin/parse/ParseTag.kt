@@ -1,7 +1,7 @@
 package parse
 
-import GblParser.Companion.TAG_ID_SIZE
-import GblParser.Companion.TAG_LENGTH_SIZE
+import Gbl.Companion.TAG_ID_SIZE
+import Gbl.Companion.TAG_LENGTH_SIZE
 import results.ParseTagResult
 import tag.TagHeader
 import utils.getIntFromBytes

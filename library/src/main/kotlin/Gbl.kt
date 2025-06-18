@@ -20,8 +20,12 @@ import tag.type.encryption.GblEncryptionData
 import tag.type.encryption.GblEncryptionInitAesCcm
 import utils.append
 import utils.putUIntToByteArray
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 
-class GblParser {
+class Gbl {
     companion object {
         internal const val HEADER_SIZE = 8
         internal const val TAG_ID_SIZE = 4
@@ -79,12 +83,21 @@ class GblParser {
         return encodeTags(finalTags)
     }
 
+    @Serializable
+    data class SerializableTag(
+        val tagType: String,
+        val tagId: UInt,
+        val length: UInt,
+        val tagData: List<Byte>
+    )
+
+    @Serializable
+    data class SerializableContainer(
+        val tags: List<SerializableTag>
+    )
+
     class GblBuilder {
         private val container = TagContainer()
-        private var buildTag: String? = null
-        private val savedBuilders = mutableMapOf<String, List<Tag>>()
-        private val savedBuildersById = mutableMapOf<Int, List<Tag>>()
-        private var nextId = 1
 
         companion object {
             fun create(): GblBuilder {
@@ -318,23 +331,6 @@ class GblParser {
             return this
         }
 
-        fun tag(tag: String): GblBuilder {
-            this.buildTag = tag
-            return this
-        }
-
-        fun build(): Int {
-            val currentTags = container.build()
-            val id = nextId++
-            savedBuildersById[id] = currentTags.getOrDefault(emptyList())
-
-            buildTag?.let { tag ->
-                savedBuilders[tag] = currentTags.getOrDefault(emptyList())
-            }
-
-            return id
-        }
-
         fun get(): List<Tag> {
             val list = container.build()
 
@@ -345,25 +341,66 @@ class GblParser {
             }
         }
 
-        fun get(id: Int): List<Tag>? {
-            return savedBuildersById[id]
+        // Serialization methods
+        fun serialize(): String {
+            val tags = get()
+            val serializableTags = tags.map { tag ->
+                SerializableTag(
+                    tagType = tag.tagType.name,
+                    tagId = tag.tagType.value,
+                    length = tag.content().size.toUInt(),
+                    tagData = tag.content().toList()
+                )
+            }
+            val container = SerializableContainer(serializableTags)
+            return Json.encodeToString(container)
         }
 
-        fun get(tag: String): List<Tag>? {
-            return savedBuilders[tag]
+        fun serializeTag(tagType: GblType): String? {
+            val tag = getTag(tagType) ?: return null
+            val serializableTag = SerializableTag(
+                tagType = tag.tagType.name,
+                tagId = tag.tagType.value,
+                length = tag.content().size.toUInt(),
+                tagData = tag.content().toList()
+            )
+            return Json.encodeToString(serializableTag)
         }
 
-        fun getAll(): Map<String, List<Tag>> {
-            return savedBuilders.toMap()
-        }
+        companion object {
+            fun deserialize(json: String): List<Tag> {
+                try {
+                    val container = Json.decodeFromString<SerializableContainer>(json)
+                    return container.tags.mapNotNull { serializableTag ->
+                        deserializeTag(serializableTag)
+                    }
+                } catch (e: Exception) {
+                    return emptyList()
+                }
+            }
 
-        fun getAllById(): Map<Int, List<Tag>> {
-            return savedBuildersById.toMap()
-        }
+            fun deserializeTag(json: String): Tag? {
+                return try {
+                    val serializableTag = Json.decodeFromString<SerializableTag>(json)
+                    deserializeTag(serializableTag)
+                } catch (e: Exception) {
+                    null
+                }
+            }
 
-        fun save() {
-            buildTag?.let { tag ->
-                savedBuilders[tag] = container.build().getOrDefault(emptyList())
+            private fun deserializeTag(serializableTag: SerializableTag): Tag? {
+                return try {
+                    val tagType = GblType.valueOf(serializableTag.tagType)
+                    val tagData = serializableTag.tagData.toByteArray()
+
+                    parseTagType(
+                        tagId = serializableTag.tagId,
+                        length = serializableTag.length,
+                        byteArray = tagData
+                    )
+                } catch (e: Exception) {
+                    null
+                }
             }
         }
 

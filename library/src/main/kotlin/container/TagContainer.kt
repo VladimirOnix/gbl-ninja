@@ -62,14 +62,6 @@ class TagContainer : Container {
                 )
             }
 
-            val existingTag = content.find { it.tagType == tag.tagType && it == tag }
-            if (existingTag != null) {
-                return ContainerResult.Error(
-                    "Tag already exists in container: ${tag.tagType}",
-                    ContainerErrorCode.DUPLICATE_TAG
-                )
-            }
-
             content.add(tag)
             ContainerResult.Success(Unit)
 
