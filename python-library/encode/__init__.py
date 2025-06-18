@@ -1,10 +1,4 @@
 
-"""
-Encode module for GBL file generation
-
-This module provides functionality for encoding GBL tags into binary format,
-including CRC calculation and tag-specific data generation.
-"""
 
 from .encode_tags import (
     encode_tags,

@@ -1,3 +1,6 @@
+from gbl import Gbl
+from results.parse_result import ParseResult
+
 def example_basic_usage():
     """Basic usage example"""
 

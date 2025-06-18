@@ -1,11 +1,4 @@
 
-"""
-Parse module for GBL file parsing
-
-This module provides functionality for parsing GBL binary data into
-structured tag objects, including tag header extraction and type-specific parsing.
-"""
-
 from .parse_tag import (
     parse_tag,
     get_int_from_bytes,

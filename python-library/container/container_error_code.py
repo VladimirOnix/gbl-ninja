@@ -1,8 +1,6 @@
 from enum import Enum
 
-
 class ContainerErrorCode(Enum):
-    """Container error codes"""
     CONTAINER_NOT_CREATED = "CONTAINER_NOT_CREATED"
     PROTECTED_TAG_VIOLATION = "PROTECTED_TAG_VIOLATION"
     TAG_NOT_FOUND = "TAG_NOT_FOUND"

@@ -1,8 +1,3 @@
-"""
-GBL Version Dependency tag implementation
-Exact conversion from Kotlin GblVersionDependency.kt
-"""
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -12,9 +7,7 @@ if TYPE_CHECKING:
 
 from .image_type import ImageType
 
-
-# Імпорти з інших модулів (будуть додані пізніше):
-# from ...tag import Tag
+from ...tag import Tag
 
 
 @dataclass

@@ -1,15 +1,8 @@
-"""
-GBL tag types enumeration
-Exact conversion from Kotlin GblType.kt
-"""
-
 from enum import Enum
 from typing import Optional
 
 
 class GblType(Enum):
-    """GBL tag types with their corresponding values"""
-
     HEADER_V3 = 0x03A617EB
     BOOTLOADER = 0xF50909F5
     APPLICATION = 0xF40A0AF4
@@ -29,15 +22,6 @@ class GblType(Enum):
 
     @classmethod
     def from_value(cls, value: int) -> Optional['GblType']:
-        """
-        Find GblType by value
-
-        Args:
-            value: Integer value to search for
-
-        Returns:
-            GblType or None if not found
-        """
         for gbl_type in cls:
             if gbl_type.value == value:
                 return gbl_type

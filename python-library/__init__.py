@@ -1,23 +1,14 @@
-# Version info
-__version__ = "1.0.0"
-__author__ = "Converted from Kotlin GBL-Ninja"
-__license__ = "Apache License 2.0"
-
-# Main API exports
 from .gbl import Gbl, GblBuilder
 
-# Core types
 from .tag.gbl_type import GblType
 from .tag.tag import Tag
 from .tag.tag_header import TagHeader
 from .tag.tag_with_header import TagWithHeader
 
-# Result types
 from .results.parse_result import ParseResult
 from .results.parse_tag_result import ParseTagResult
 from .results.encode_result import EncodeResult
 
-# Tag types - basic
 from .tag.type.gbl_header import GblHeader
 from .tag.type.gbl_end import GblEnd
 from .tag.type.application.gbl_application import GblApplication
@@ -27,7 +18,6 @@ from .tag.type.gbl_prog import GblProg
 from .tag.type.gbl_se_upgrade import GblSeUpgrade
 from .tag.type.gbl_erase_prog import GblEraseProg
 
-# Tag types - compression
 from .tag.type.gbl_prog_lz4 import GblProgLz4
 from .tag.type.gbl_prog_lzma import GblProgLzma
 
@@ -55,10 +45,6 @@ from .utils.put_uint_to_byte_array import put_uint_to_byte_array
 from .utils.to_byte_array import uint_to_byte_array, ByteOrder
 
 __all__ = [
-    # Version
-    '__version__',
-
-    # Main API
     'Gbl',
     'GblBuilder',
 

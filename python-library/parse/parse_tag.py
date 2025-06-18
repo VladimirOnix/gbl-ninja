@@ -1,16 +1,10 @@
-"""
-Tag parsing functionality - converts bytes to tag headers
-Converted from Kotlin ParseTag.kt
-"""
 
 import struct
 from typing import Tuple, Union
 from dataclasses import dataclass
 
-# Імпорти з інших модулів (будуть додані пізніше):
-# from tag.tag_header import TagHeader
-# from results.parse_tag_result import ParseTagResult
-
+from tag.tag_header import TagHeader
+from results.parse_tag_result import ParseTagResult
 
 # Constants
 TAG_ID_SIZE = 4
@@ -19,8 +13,6 @@ TAG_LENGTH_SIZE = 4
 
 @dataclass
 class ParseTagResult:
-    """Result of tag parsing operation"""
-
     @dataclass
     class Success:
         tag_header: 'TagHeader'
@@ -38,17 +30,7 @@ class ParseTagResult:
 
 
 def parse_tag(byte_array: bytes, offset: int = 0) -> Union[ParseTagResult.Success, ParseTagResult.Fatal]:
-    """
-    Parse a single tag from byte array starting at offset
 
-    Args:
-        byte_array: Input byte array containing GBL data
-        offset: Starting position in the array
-
-    Returns:
-        ParseTagResult: Success with tag header and data, or Fatal with error
-    """
-    # Validate offset and minimum size
     if offset < 0 or offset + TAG_ID_SIZE + TAG_LENGTH_SIZE > len(byte_array):
         return ParseTagResult.Fatal(f"Invalid offset: {offset}")
 
@@ -84,17 +66,6 @@ def parse_tag(byte_array: bytes, offset: int = 0) -> Union[ParseTagResult.Succes
 
 
 def get_int_from_bytes(byte_array: bytes, offset: int = 0, length: int = 4) -> int:
-    """
-    Extract integer from bytes at given offset (little-endian)
-
-    Args:
-        byte_array: Source byte array
-        offset: Starting position
-        length: Number of bytes to read (default 4)
-
-    Returns:
-        int: Extracted integer value
-    """
     if offset + length > len(byte_array):
         raise ValueError(f"Not enough bytes: need {length} at offset {offset}, have {len(byte_array)}")
 

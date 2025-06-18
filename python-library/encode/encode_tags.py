@@ -1,35 +1,10 @@
-"""
-Tag encoding functionality for GBL files
-Converted from Kotlin encodeTags.kt
-"""
-
 import struct
 import zlib
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 from io import BytesIO
 
-# Імпорти з інших модулів (будуть додані пізніше):
-# from tag.tag import Tag
-# from tag.tag_with_header import TagWithHeader
-# from tag.tag_header import TagHeader
-# from tag.gbl_type import GblType
-# from tag.type.gbl_header import GblHeader
-# from tag.type.gbl_bootloader import GblBootloader
-# from tag.type.gbl_application import GblApplication
-# from tag.type.gbl_prog import GblProg
-# from tag.type.gbl_se_upgrade import GblSeUpgrade
-# from tag.type.gbl_end import GblEnd
-# from tag.type.gbl_metadata import GblMetadata
-# from tag.type.gbl_prog_lz4 import GblProgLz4
-# from tag.type.gbl_prog_lzma import GblProgLzma
-# from tag.type.gbl_erase_prog import GblEraseProg
-# from tag.type.gbl_tag_delta import GblTagDelta
-# from tag.type.certificate.gbl_certificate_ecdsa_p256 import GblCertificateEcdsaP256
-# from tag.type.certificate.gbl_signature_ecdsa_p256 import GblSignatureEcdsaP256
-# from tag.type.encryption.gbl_encryption_data import GblEncryptionData
-# from tag.type.encryption.gbl_encryption_init_aes_ccm import GblEncryptionInitAesCcm
-# from tag.type.version.gbl_version_dependency import GblVersionDependency
-
+if TYPE_CHECKING:
+    from tag.tag import Tag
 
 # Constants
 TAG_ID_SIZE = 4
@@ -37,15 +12,6 @@ TAG_LENGTH_SIZE = 4
 
 
 def encode_tags(tags: List['Tag']) -> bytes:
-    """
-    Encode list of tags to byte array
-
-    Args:
-        tags: List of Tag objects to encode
-
-    Returns:
-        bytes: Encoded GBL file content
-    """
     total_size = _calculate_total_size(tags)
     buffer = BytesIO()
 
@@ -132,7 +98,7 @@ def generate_tag_data(tag: 'Tag') -> bytes:
         return getattr(tag, 'tag_data', b'')
 
 
-def _generate_header_data(tag: 'GblHeader') -> bytes:
+def _generate_header_data(tag) -> bytes:
     """Generate data for GBL header tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.version))
@@ -140,7 +106,7 @@ def _generate_header_data(tag: 'GblHeader') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_bootloader_data(tag: 'GblBootloader') -> bytes:
+def _generate_bootloader_data(tag) -> bytes:
     """Generate data for bootloader tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.bootloader_version))
@@ -149,7 +115,7 @@ def _generate_bootloader_data(tag: 'GblBootloader') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_application_data(tag: 'GblApplication') -> bytes:
+def _generate_application_data(tag) -> bytes:
     """Generate data for application tag"""
     app_data = tag.application_data
     buffer = BytesIO()
@@ -168,7 +134,7 @@ def _generate_application_data(tag: 'GblApplication') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_prog_data(tag: 'GblProg') -> bytes:
+def _generate_prog_data(tag) -> bytes:
     """Generate data for program tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.flash_start_address))
@@ -176,7 +142,7 @@ def _generate_prog_data(tag: 'GblProg') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_se_upgrade_data(tag: 'GblSeUpgrade') -> bytes:
+def _generate_se_upgrade_data(tag) -> bytes:
     """Generate data for SE upgrade tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.blob_size))
@@ -185,35 +151,34 @@ def _generate_se_upgrade_data(tag: 'GblSeUpgrade') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_end_data(tag: 'GblEnd') -> bytes:
+def _generate_end_data(tag) -> bytes:
     """Generate data for end tag"""
-    print(f"Found end tag {tag.tag_header.length}")
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.gbl_crc))
     return buffer.getvalue()
 
 
-def _generate_metadata_data(tag: 'GblMetadata') -> bytes:
+def _generate_metadata_data(tag) -> bytes:
     """Generate data for metadata tag"""
     return tag.meta_data
 
 
-def _generate_prog_lz4_data(tag: 'GblProgLz4') -> bytes:
+def _generate_prog_lz4_data(tag) -> bytes:
     """Generate data for LZ4 compressed program tag"""
     return tag.tag_data
 
 
-def _generate_prog_lzma_data(tag: 'GblProgLzma') -> bytes:
+def _generate_prog_lzma_data(tag) -> bytes:
     """Generate data for LZMA compressed program tag"""
     return tag.tag_data
 
 
-def _generate_erase_prog_data(tag: 'GblEraseProg') -> bytes:
+def _generate_erase_prog_data(tag) -> bytes:
     """Generate data for erase program tag"""
     return tag.tag_data
 
 
-def _generate_tag_delta_data(tag: 'GblTagDelta') -> bytes:
+def _generate_tag_delta_data(tag) -> bytes:
     """Generate data for tag delta"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.new_crc))
@@ -223,7 +188,7 @@ def _generate_tag_delta_data(tag: 'GblTagDelta') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_certificate_ecdsa_p256_data(tag: 'GblCertificateEcdsaP256') -> bytes:
+def _generate_certificate_ecdsa_p256_data(tag) -> bytes:
     """Generate data for ECDSA P256 certificate tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<B', tag.certificate.struct_version))
@@ -234,7 +199,7 @@ def _generate_certificate_ecdsa_p256_data(tag: 'GblCertificateEcdsaP256') -> byt
     return buffer.getvalue()
 
 
-def _generate_signature_ecdsa_p256_data(tag: 'GblSignatureEcdsaP256') -> bytes:
+def _generate_signature_ecdsa_p256_data(tag) -> bytes:
     """Generate data for ECDSA P256 signature tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<B', tag.r))
@@ -242,12 +207,12 @@ def _generate_signature_ecdsa_p256_data(tag: 'GblSignatureEcdsaP256') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_encryption_data(tag: 'GblEncryptionData') -> bytes:
+def _generate_encryption_data(tag) -> bytes:
     """Generate data for encryption data tag"""
     return tag.encrypted_gbl_data
 
 
-def _generate_encryption_init_data(tag: 'GblEncryptionInitAesCcm') -> bytes:
+def _generate_encryption_init_data(tag) -> bytes:
     """Generate data for encryption init tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.msg_len))
@@ -255,7 +220,7 @@ def _generate_encryption_init_data(tag: 'GblEncryptionInitAesCcm') -> bytes:
     return buffer.getvalue()
 
 
-def _generate_version_dependency_data(tag: 'GblVersionDependency') -> bytes:
+def _generate_version_dependency_data(tag) -> bytes:
     """Generate data for version dependency tag"""
     buffer = BytesIO()
     buffer.write(struct.pack('<I', tag.image_type.value))
@@ -371,6 +336,11 @@ def create_end_tag_with_crc(tags: List['Tag']) -> 'GblEnd':
     Returns:
         GblEnd: END tag with calculated CRC
     """
+    # Імпорти всередині функції
+    from tag.gbl_type import GblType
+    from tag.tag_header import TagHeader
+    from tag.type.gbl_end import GblEnd
+
     crc = zlib.crc32(b'')
 
     # Calculate CRC over all tag data
@@ -387,7 +357,6 @@ def create_end_tag_with_crc(tags: List['Tag']) -> 'GblEnd':
         crc = zlib.crc32(tag_data, crc)
 
     # Include END tag header in CRC
-    from tag.gbl_type import GblType  # Буде додано пізніше
     end_tag_id = GblType.END.value
     end_tag_length = TAG_LENGTH_SIZE
 
@@ -401,10 +370,6 @@ def create_end_tag_with_crc(tags: List['Tag']) -> 'GblEnd':
     crc_value = crc & 0xFFFFFFFF
     crc_bytes = struct.pack('<I', crc_value)
 
-    # Create END tag (імпорт буде додано пізніше)
-    from tag.tag_header import TagHeader
-    from tag.type.gbl_end import GblEnd
-
     return GblEnd(
         tag_header=TagHeader(
             id=end_tag_id,
@@ -416,16 +381,6 @@ def create_end_tag_with_crc(tags: List['Tag']) -> 'GblEnd':
 
 
 def encode_tags_with_end_tag(tags: List['Tag']) -> bytes:
-    """
-    Encode tags and automatically add END tag with CRC
-
-    Args:
-        tags: List of tags to encode
-
-    Returns:
-        bytes: Complete GBL file with END tag
-    """
-    # Filter out existing END tags
     tags_without_end = [
         tag for tag in tags
         if not (hasattr(tag, '__class__') and tag.__class__.__name__ == 'GblEnd')

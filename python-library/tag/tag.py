@@ -1,13 +1,4 @@
-"""
-Tag interface
-Exact conversion from Kotlin Tag.kt
-"""
-
 from abc import ABC, abstractmethod
-
-
-# Імпорти з інших модулів (будуть додані пізніше):
-# from encode.encode_tags import generate_tag_data
 
 
 class Tag(ABC):
@@ -31,7 +22,7 @@ class Tag(ABC):
         Returns:
             bytes: Tag data content
         """
-        # Імпорт буде додано пізніше
+        # Імпорт всередині функції для уникнення циклічного імпорту
         from encode.encode_tags import generate_tag_data
 
         tag_data = generate_tag_data(self)

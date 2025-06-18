@@ -2,10 +2,8 @@ from dataclasses import dataclass
 from typing import Any
 from .container_error_code import ContainerErrorCode
 
-
 @dataclass
 class ContainerResult:
-    """Container operation result"""
 
     @dataclass
     class Success:

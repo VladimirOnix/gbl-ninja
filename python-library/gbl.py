@@ -1,7 +1,6 @@
 from typing import List, Union, Optional
 from copy import deepcopy
 
-# Імпорти з інших модулів
 from container.container_result import ContainerResult
 from container.tag_container import TagContainer
 from encode.encode_tags import create_end_tag_with_crc, encode_tags
@@ -34,23 +33,12 @@ from utils.put_uint_to_byte_array import put_uint_to_byte_array
 
 
 class Gbl:
-    """Main GBL parser and builder class"""
-
-    # Constants як у Kotlin companion object
     HEADER_SIZE = 8
     TAG_ID_SIZE = 4
     TAG_LENGTH_SIZE = 4
 
     def parse_byte_array(self, byte_array: bytes) -> Union[ParseResult.Success, ParseResult.Fatal]:
-        """
-        Parse GBL file from byte array
 
-        Args:
-            byte_array: Input byte array containing GBL data
-
-        Returns:
-            ParseResult: Success with tags list or Fatal with error
-        """
         offset = 0
         size = len(byte_array)
         raw_tags: List[Tag] = []
@@ -85,15 +73,7 @@ class Gbl:
         return ParseResult.Success(raw_tags)
 
     def encode(self, tags: List[Tag]) -> bytes:
-        """
-        Encode list of tags to byte array
 
-        Args:
-            tags: List of Tag objects to encode
-
-        Returns:
-            bytes: Encoded GBL file content
-        """
         tags_without_end = [tag for tag in tags if not isinstance(tag, GblEnd)]
 
         end_tag = create_end_tag_with_crc(tags_without_end)
@@ -104,30 +84,24 @@ class Gbl:
 
     @property
     def GblBuilder(self) -> type:
-        """Access to GblBuilder class (як у Kotlin inner class)"""
         return GblBuilder
 
 
 class GblBuilder:
-    """GBL file builder with fluent API"""
-
     def __init__(self):
         self.container = TagContainer()
 
     @classmethod
     def create(cls) -> 'GblBuilder':
-        """Create builder with container"""
         builder = cls()
         builder.container.create()
         return builder
 
     @classmethod
     def empty(cls) -> 'GblBuilder':
-        """Create empty builder"""
         return cls()
 
     def encryption_data(self, encrypted_gbl_data: bytes) -> 'GblBuilder':
-        """Add encryption data tag"""
         tag = GblEncryptionData(
             tag_header=TagHeader(
                 id=GblType.ENCRYPTION_DATA.value,
@@ -142,7 +116,6 @@ class GblBuilder:
         return self
 
     def encryption_init(self, msg_len: int, nonce: int) -> 'GblBuilder':
-        """Add encryption init tag"""
         tag = GblEncryptionInitAesCcm(
             tag_header=TagHeader(
                 id=GblType.ENCRYPTION_INIT.value,
@@ -158,7 +131,6 @@ class GblBuilder:
         return self
 
     def signature_ecdsa_p256(self, r: int, s: int) -> 'GblBuilder':
-        """Add ECDSA P256 signature tag"""
         tag = GblSignatureEcdsaP256(
             tag_header=TagHeader(
                 id=GblType.SIGNATURE_ECDSA_P256.value,
@@ -174,7 +146,6 @@ class GblBuilder:
         return self
 
     def certificate_ecdsa_p256(self, certificate: ApplicationCertificate) -> 'GblBuilder':
-        """Add ECDSA P256 certificate tag"""
         tag = GblCertificateEcdsaP256(
             tag_header=TagHeader(
                 id=GblType.CERTIFICATE_ECDSA_P256.value,
@@ -189,13 +160,12 @@ class GblBuilder:
         return self
 
     def version_dependency(self, dependency_data: bytes) -> 'GblBuilder':
-        """Add version dependency tag"""
         tag = DefaultTag(
             tag_header=TagHeader(
                 id=GblType.VERSION_DEPENDENCY.value,
                 length=len(dependency_data)
             ),
-            tag_type=GblType.VERSION_DEPENDENCY,
+            _tag_type=GblType.VERSION_DEPENDENCY,
             tag_data=dependency_data.copy()
         )
 
@@ -203,7 +173,6 @@ class GblBuilder:
         return self
 
     def bootloader(self, bootloader_version: int, address: int, data: bytes) -> 'GblBuilder':
-        """Add bootloader tag"""
         tag = GblBootloader(
             tag_header=TagHeader(
                 id=GblType.BOOTLOADER.value,
@@ -220,7 +189,6 @@ class GblBuilder:
         return self
 
     def metadata(self, meta_data: bytes) -> 'GblBuilder':
-        """Add metadata tag"""
         tag = GblMetadata(
             tag_header=TagHeader(
                 id=GblType.METADATA.value,
@@ -235,7 +203,6 @@ class GblBuilder:
         return self
 
     def prog(self, flash_start_address: int, data: bytes) -> 'GblBuilder':
-        """Add program data tag"""
         tag = GblProg(
             tag_header=TagHeader(
                 id=GblType.PROG.value,

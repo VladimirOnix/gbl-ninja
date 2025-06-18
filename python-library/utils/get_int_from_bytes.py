@@ -1,23 +1,7 @@
-"""
-Integer extraction from bytes utilities
-Exact conversion from Kotlin getIntFromBytes.kt
-"""
-
 import struct
 
 
 def get_int_from_bytes(byte_array: bytes, offset: int = 0, length: int = 4) -> Any:
-    """
-    Get ByteBuffer from bytes at given offset (little-endian)
-
-    Args:
-        byte_array: Source byte array
-        offset: Starting position (default 0)
-        length: Number of bytes to read (default 4)
-
-    Returns:
-        object: Object with int property (mimics ByteBuffer)
-    """
     if offset < 0 or offset + length > len(byte_array):
         raise ValueError(f"Invalid offset/length: offset={offset}, length={length}, array_size={len(byte_array)}")
 

@@ -1,8 +1,3 @@
-"""
-GBL Tag Delta implementation
-Exact conversion from Kotlin GblTagDelta.kt
-"""
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -12,15 +7,12 @@ if TYPE_CHECKING:
     from ..tag import Tag
 
 
-# Імпорти з інших модулів (будуть додані пізніше):
-# from ..tag import Tag
-# from ..tag_with_header import TagWithHeader
+from ..tag import Tag
+from ..tag_with_header import TagWithHeader
 
 
 @dataclass
 class GblTagDelta:
-    """GBL Tag Delta"""
-
     tag_header: 'TagHeader'
     tag_type: 'GblType'
     tag_data: bytes  # ByteArray -> bytes
@@ -30,7 +22,6 @@ class GblTagDelta:
     data: bytes  # ByteArray -> bytes
 
     def copy(self) -> 'Tag':
-        """Create a copy of the tag"""
         return GblTagDelta(
             tag_header=self.tag_header,
             tag_type=self.tag_type,
