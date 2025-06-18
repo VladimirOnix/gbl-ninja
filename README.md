@@ -56,7 +56,7 @@ val gblBytes = builder.buildToByteArray()
 ## Documentation
 
 - **[Library Documentation](library/README.md)** - Detailed API reference and examples
-- **Tool Documentation** - *(coming soon)*
+- **[Gbl Tool Documentation](gbl-tool-cli/README.md)** - Detailed API reference and examples
 
 ## About GBL Format
 
