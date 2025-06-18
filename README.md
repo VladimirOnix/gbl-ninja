@@ -79,7 +79,3 @@ GBL (Gecko Bootloader) is a binary file format used for firmware updates on Sili
 ## License
 
 Apache License 2.0
-
----
-
-For detailed documentation and API reference, see the [library documentation](library/README.md).
