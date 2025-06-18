@@ -1,0 +1,91 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.1.20'
+    id 'java'
+    id 'jacoco'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+}
+
+tasks.withType(Test) {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, excludes: [
+                    '**/*$*.*',
+                    'jdk/internal/**',
+                    '**/data/**',
+                    '**/models/**',
+                    '**/config/**'
+            ])
+        }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+application {
+    mainClass = 'org.example.MainKt'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass,
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('checkCoverage') {
+    dependsOn jacocoTestCoverageVerification
+    description = 'Runs tests and verifies code coverage'
+    group = 'verification'
+}
+
+tasks.register('release') {
+    dependsOn clean, jar, checkCoverage
+    description = 'Cleans the project, verifies code coverage, and builds a release JAR'
+    group = 'build'
+}
+
+build.dependsOn jar
