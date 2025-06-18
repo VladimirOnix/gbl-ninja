@@ -1,4 +1,5 @@
 import struct
+from typing import Any
 
 
 def get_int_from_bytes(byte_array: bytes, offset: int = 0, length: int = 4) -> Any:

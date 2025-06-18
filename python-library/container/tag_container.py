@@ -6,12 +6,12 @@ from .container import Container
 from .container_result import ContainerResult
 from .container_error_code import ContainerErrorCode
 
-if TYPE_CHECKING:
-    from tag.gbl_type import GblType
-    from tag.tag import Tag
-    from tag.tag_header import TagHeader
-    from tag.type.gbl_header import GblHeader
-    from tag.type.gbl_end import GblEnd
+# Прямі імпорти замість TYPE_CHECKING для уникнення проблем
+from tag.gbl_type import GblType
+from tag.tag import Tag
+from tag.tag_header import TagHeader
+from tag.type.gbl_header import GblHeader
+from tag.type.gbl_end import GblEnd
 
 
 class TagContainer(Container):
@@ -24,39 +24,58 @@ class TagContainer(Container):
     HEADER_GBL_TYPE = 0
 
     def __init__(self):
-        self._content: Set['Tag'] = set()
+        self._content: Set[Tag] = set()
         self._is_created = False
 
     @property
     def PROTECTED_TAG_TYPES(self):
-        from tag.gbl_type import GblType
         return {GblType.HEADER_V3, GblType.END}
 
     def create(self) -> ContainerResult:
         try:
+            print(f"   🔧 Creating container...")
+
             if self._is_created:
+                print(f"   ℹ Container already created")
                 return ContainerResult.Success(None)
 
             self._content.clear()
+            print(f"   ↳ Content cleared")
 
             # Create header tag
-            header_tag = self._create_header_tag()
-            self._content.add(header_tag)
+            print(f"   ↳ Creating header tag...")
+            try:
+                header_tag = self._create_header_tag()
+                self._content.add(header_tag)
+                print(f"   ↳ Header tag created and added")
+            except Exception as e:
+                print(f"   ✗ Failed to create header tag: {e}")
+                return ContainerResult.Error(f"Failed to create header tag: {e}", ContainerErrorCode.INTERNAL_ERROR)
 
             # Create end tag
-            end_tag = self._create_end_tag()
-            self._content.add(end_tag)
+            print(f"   ↳ Creating end tag...")
+            try:
+                end_tag = self._create_end_tag()
+                self._content.add(end_tag)
+                print(f"   ↳ End tag created and added")
+            except Exception as e:
+                print(f"   ✗ Failed to create end tag: {e}")
+                return ContainerResult.Error(f"Failed to create end tag: {e}", ContainerErrorCode.INTERNAL_ERROR)
 
             self._is_created = True
+            print(f"   ✓ Container created successfully with {len(self._content)} protected tags")
             return ContainerResult.Success(None)
 
         except Exception as e:
+            print(f"   ✗ Container creation failed: {e}")
+            import traceback
+            traceback.print_exc()
             return ContainerResult.Error(
                 f"Failed to create container: {str(e)}",
                 ContainerErrorCode.INTERNAL_ERROR
             )
 
-    def add(self, tag: 'Tag') -> ContainerResult:
+    def add(self, tag: Tag) -> ContainerResult:
         """Add tag to container"""
         try:
             if not self._is_created:
@@ -72,6 +91,7 @@ class TagContainer(Container):
                 )
 
             self._content.add(tag)
+            print(f"   ↳ Added tag {tag.tag_type} to container")
             return ContainerResult.Success(None)
 
         except Exception as e:
@@ -80,7 +100,7 @@ class TagContainer(Container):
                 ContainerErrorCode.INTERNAL_ERROR
             )
 
-    def remove(self, tag: 'Tag') -> ContainerResult:
+    def remove(self, tag: Tag) -> ContainerResult:
         """Remove tag from container"""
         try:
             if not self._is_created:
@@ -118,8 +138,6 @@ class TagContainer(Container):
                     "Container must be created before building. Call create() first.",
                     ContainerErrorCode.CONTAINER_NOT_CREATED
                 )
-
-            from tag.gbl_type import GblType
 
             sorted_tags = []
 
@@ -166,7 +184,6 @@ class TagContainer(Container):
                 )
 
             tags = build_result.data
-            from tag.type.gbl_end import GblEnd
             tags_without_end = [tag for tag in tags if not isinstance(tag, GblEnd)]
 
             # Create new end tag with calculated CRC
@@ -187,19 +204,19 @@ class TagContainer(Container):
     # Query Methods
     # ===============================
 
-    def has_tag(self, tag_type: 'GblType') -> bool:
+    def has_tag(self, tag_type: GblType) -> bool:
         """Check if container has tag of specific type"""
         if not self._is_created:
             return False
         return any(tag.tag_type == tag_type for tag in self._content)
 
-    def get_tag(self, tag_type: 'GblType') -> Optional['Tag']:
+    def get_tag(self, tag_type: GblType) -> Optional[Tag]:
         """Get first tag of specific type"""
         if not self._is_created:
             return None
         return next((tag for tag in self._content if tag.tag_type == tag_type), None)
 
-    def get_all_tags(self, tag_type: 'GblType') -> List['Tag']:
+    def get_all_tags(self, tag_type: GblType) -> List[Tag]:
         """Get all tags of specific type"""
         if not self._is_created:
             return []
@@ -217,7 +234,7 @@ class TagContainer(Container):
             return 0
         return len(self._content)
 
-    def get_tag_types(self) -> Set['GblType']:
+    def get_tag_types(self) -> Set[GblType]:
         """Get set of all tag types in container"""
         if not self._is_created:
             return set()
@@ -250,57 +267,48 @@ class TagContainer(Container):
     # Private Helper Methods
     # ===============================
 
-    def _is_protected_tag(self, tag: 'Tag') -> bool:
+    def _is_protected_tag(self, tag: Tag) -> bool:
         """Check if tag is protected"""
         return tag.tag_type in self.PROTECTED_TAG_TYPES
 
-    def _find_tag_by_type(self, tag_type: 'GblType') -> Optional['Tag']:
+    def _find_tag_by_type(self, tag_type: GblType) -> Optional[Tag]:
         """Find first tag by type"""
         return next((tag for tag in self._content if tag.tag_type == tag_type), None)
 
-    def _create_header_tag(self) -> 'GblHeader':
+    def _create_header_tag(self) -> GblHeader:
         """Create header tag"""
-        from tag.tag_header import TagHeader
-        from tag.type.gbl_header import GblHeader
-        from tag.gbl_type import GblType
+        try:
+            header = GblHeader(
+                tag_header=TagHeader(
+                    id=self.GBL_TAG_ID_HEADER_V3,
+                    length=self.HEADER_SIZE
+                ),
+                version=self.HEADER_VERSION,
+                gbl_type=self.HEADER_GBL_TYPE,
+                tag_data=bytes(8)  # Will be set by content() method
+            )
+            return header
+        except Exception as e:
+            print(f"Error creating header tag: {e}")
+            raise
 
-        header = GblHeader(
-            tag_header=TagHeader(
-                id=self.GBL_TAG_ID_HEADER_V3,
-                length=self.HEADER_SIZE
-            ),
-            tag_type=GblType.HEADER_V3,
-            version=self.HEADER_VERSION,
-            gbl_type=self.HEADER_GBL_TYPE,
-            tag_data=bytes(0)
-        )
-
-        # Set tag data to the content
-        header.tag_data = header.content()
-        return header
-
-    def _create_end_tag(self) -> 'GblEnd':
+    def _create_end_tag(self) -> GblEnd:
         """Create empty end tag"""
-        from tag.tag_header import TagHeader
-        from tag.type.gbl_end import GblEnd
-        from tag.gbl_type import GblType
+        try:
+            return GblEnd(
+                tag_header=TagHeader(
+                    id=GblType.END.value,
+                    length=4
+                ),
+                gbl_crc=0,
+                tag_data=bytes(4)
+            )
+        except Exception as e:
+            print(f"Error creating end tag: {e}")
+            raise
 
-        return GblEnd(
-            tag_header=TagHeader(
-                id=GblType.END.value,
-                length=4
-            ),
-            tag_type=GblType.END,
-            gbl_crc=0,
-            tag_data=bytes(4)
-        )
-
-    def _create_end_tag_with_crc(self, tags: List['Tag']) -> 'GblEnd':
+    def _create_end_tag_with_crc(self, tags: List[Tag]) -> GblEnd:
         """Create end tag with calculated CRC"""
-        from tag.tag_header import TagHeader
-        from tag.type.gbl_end import GblEnd
-        from tag.gbl_type import GblType
-
         crc = zlib.crc32(b'')  # Initialize CRC
 
         # Calculate CRC over all tag data
@@ -330,12 +338,11 @@ class TagContainer(Container):
                 id=end_tag_id,
                 length=end_tag_length
             ),
-            tag_type=GblType.END,
             gbl_crc=crc_value,
             tag_data=crc_bytes
         )
 
-    def _encode_tags(self, tags: List['Tag']) -> bytes:
+    def _encode_tags(self, tags: List[Tag]) -> bytes:
         """Encode tags to byte array"""
         result = bytearray()
 

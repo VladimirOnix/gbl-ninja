@@ -33,12 +33,14 @@ from utils.put_uint_to_byte_array import put_uint_to_byte_array
 
 
 class Gbl:
+    """Main GBL parser and builder class"""
+
     HEADER_SIZE = 8
     TAG_ID_SIZE = 4
     TAG_LENGTH_SIZE = 4
 
     def parse_byte_array(self, byte_array: bytes) -> Union[ParseResult.Success, ParseResult.Fatal]:
-
+        """Parse GBL file from byte array"""
         offset = 0
         size = len(byte_array)
         raw_tags: List[Tag] = []
@@ -73,148 +75,157 @@ class Gbl:
         return ParseResult.Success(raw_tags)
 
     def encode(self, tags: List[Tag]) -> bytes:
-
+        """Encode list of tags to GBL byte array"""
         tags_without_end = [tag for tag in tags if not isinstance(tag, GblEnd)]
-
         end_tag = create_end_tag_with_crc(tags_without_end)
-
         final_tags = tags_without_end + [end_tag]
-
         return encode_tags(final_tags)
 
     @property
     def GblBuilder(self) -> type:
+        """Get GblBuilder class"""
         return GblBuilder
 
 
 class GblBuilder:
+    """GBL file builder class"""
+
     def __init__(self):
         self.container = TagContainer()
 
     @classmethod
     def create(cls) -> 'GblBuilder':
+        """Create a new GblBuilder with initialized container"""
         builder = cls()
-        builder.container.create()
+        print("   🔧 Calling container.create()...")
+        result = builder.container.create()
+        if isinstance(result, ContainerResult.Error):
+            print(f"   ✗ Container creation failed: {result.message}")
+            print(f"   ✗ Error code: {result.code}")
+        else:
+            print(f"   ✓ Container created successfully")
         return builder
 
     @classmethod
     def empty(cls) -> 'GblBuilder':
+        """Create an empty GblBuilder without initializing container"""
         return cls()
 
+    def _add_tag_safely(self, tag: Tag) -> bool:
+        """Helper method to add tag with error checking"""
+        result = self.container.add(tag)
+        if isinstance(result, ContainerResult.Error):
+            print(f"Error adding tag {tag.tag_type}: {result.message}")
+            return False
+        return True
+
     def encryption_data(self, encrypted_gbl_data: bytes) -> 'GblBuilder':
+        """Add encryption data tag"""
         tag = GblEncryptionData(
             tag_header=TagHeader(
                 id=GblType.ENCRYPTION_DATA.value,
                 length=len(encrypted_gbl_data)
             ),
-            tag_type=GblType.ENCRYPTION_DATA,
             encrypted_gbl_data=encrypted_gbl_data,
-            tag_data=encrypted_gbl_data.copy()
+            tag_data=bytes(encrypted_gbl_data)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def encryption_init(self, msg_len: int, nonce: int) -> 'GblBuilder':
+        """Add encryption initialization tag"""
         tag = GblEncryptionInitAesCcm(
             tag_header=TagHeader(
                 id=GblType.ENCRYPTION_INIT.value,
                 length=5
             ),
-            tag_type=GblType.ENCRYPTION_INIT,
             msg_len=msg_len,
             nonce=nonce,
             tag_data=self._generate_encryption_init_tag_data(msg_len, nonce)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def signature_ecdsa_p256(self, r: int, s: int) -> 'GblBuilder':
+        """Add ECDSA P256 signature tag"""
         tag = GblSignatureEcdsaP256(
             tag_header=TagHeader(
                 id=GblType.SIGNATURE_ECDSA_P256.value,
                 length=2
             ),
-            tag_type=GblType.SIGNATURE_ECDSA_P256,
             r=r,
             s=s,
             tag_data=self._generate_signature_ecdsa_p256_tag_data(r, s)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def certificate_ecdsa_p256(self, certificate: ApplicationCertificate) -> 'GblBuilder':
+        """Add ECDSA P256 certificate tag"""
         tag = GblCertificateEcdsaP256(
             tag_header=TagHeader(
                 id=GblType.CERTIFICATE_ECDSA_P256.value,
                 length=8
             ),
-            tag_type=GblType.CERTIFICATE_ECDSA_P256,
             certificate=certificate,
             tag_data=self._generate_certificate_ecdsa_p256_tag_data(certificate)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def version_dependency(self, dependency_data: bytes) -> 'GblBuilder':
+        """Add version dependency tag"""
         tag = DefaultTag(
             tag_header=TagHeader(
                 id=GblType.VERSION_DEPENDENCY.value,
                 length=len(dependency_data)
             ),
             _tag_type=GblType.VERSION_DEPENDENCY,
-            tag_data=dependency_data.copy()
+            tag_data=bytes(dependency_data)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def bootloader(self, bootloader_version: int, address: int, data: bytes) -> 'GblBuilder':
+        """Add bootloader tag"""
         tag = GblBootloader(
             tag_header=TagHeader(
                 id=GblType.BOOTLOADER.value,
                 length=8 + len(data)
             ),
-            tag_type=GblType.BOOTLOADER,
             bootloader_version=bootloader_version,
             address=address,
             data=data,
             tag_data=self._generate_bootloader_tag_data(bootloader_version, address, data)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def metadata(self, meta_data: bytes) -> 'GblBuilder':
+        """Add metadata tag"""
         tag = GblMetadata(
             tag_header=TagHeader(
                 id=GblType.METADATA.value,
                 length=len(meta_data)
             ),
-            tag_type=GblType.METADATA,
             meta_data=meta_data,
-            tag_data=meta_data.copy()
+            tag_data=bytes(meta_data)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def prog(self, flash_start_address: int, data: bytes) -> 'GblBuilder':
+        """Add program data tag"""
         tag = GblProg(
             tag_header=TagHeader(
                 id=GblType.PROG.value,
                 length=4 + len(data)
             ),
-            tag_type=GblType.PROG,
             flash_start_address=flash_start_address,
             data=data,
             tag_data=self._generate_prog_tag_data(flash_start_address, data)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def prog_lz4(self, flash_start_address: int, compressed_data: bytes, decompressed_size: int) -> 'GblBuilder':
@@ -224,11 +235,9 @@ class GblBuilder:
                 id=GblType.PROG_LZ4.value,
                 length=8 + len(compressed_data)
             ),
-            tag_type=GblType.PROG_LZ4,
             tag_data=self._generate_prog_lz4_tag_data(flash_start_address, compressed_data, decompressed_size)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def prog_lzma(self, flash_start_address: int, compressed_data: bytes, decompressed_size: int) -> 'GblBuilder':
@@ -238,11 +247,9 @@ class GblBuilder:
                 id=GblType.PROG_LZMA.value,
                 length=8 + len(compressed_data)
             ),
-            tag_type=GblType.PROG_LZMA,
             tag_data=self._generate_prog_lzma_tag_data(flash_start_address, compressed_data, decompressed_size)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def se_upgrade(self, version: int, data: bytes) -> 'GblBuilder':
@@ -253,14 +260,12 @@ class GblBuilder:
                 id=GblType.SE_UPGRADE.value,
                 length=8 + blob_size
             ),
-            tag_type=GblType.SE_UPGRADE,
             blob_size=blob_size,
             version=version,
             data=data,
             tag_data=self._generate_se_upgrade_tag_data(blob_size, version, data)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def application(self, type_val: int = ApplicationData.APP_TYPE,
@@ -277,12 +282,10 @@ class GblBuilder:
                 id=GblType.APPLICATION.value,
                 length=len(tag_data)
             ),
-            tag_type=GblType.APPLICATION,
-            tag_data=tag_data,
-            application_data=application_data
+            application_data=application_data,
+            tag_data=tag_data
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def erase_prog(self) -> 'GblBuilder':
@@ -292,25 +295,36 @@ class GblBuilder:
                 id=GblType.ERASEPROG.value,
                 length=8
             ),
-            tag_type=GblType.ERASEPROG,
             tag_data=bytes(8)
         )
-
-        self.container.add(tag)
+        self._add_tag_safely(tag)
         return self
 
     def get(self) -> List[Tag]:
         """Get list of tags"""
         build_result = self.container.build()
-
         if isinstance(build_result, ContainerResult.Success):
             return build_result.data
         else:
+            print(
+                f"Error building container: {build_result.message if hasattr(build_result, 'message') else 'Unknown error'}")
             return []
 
     def build_to_list(self) -> List[Tag]:
         """Build to tag list with END tag"""
         tags = self._get_or_default(self.container.build(), [])
+        if not tags:
+            print("Warning: No tags to build - creating minimal structure")
+            # Create minimal structure with just header and end
+            header = GblHeader(
+                tag_header=TagHeader(id=0x03A617EB, length=8),
+                version=50331648,
+                gbl_type=0,
+                tag_data=bytes(8)
+            )
+            end_tag = create_end_tag_with_crc([header])
+            return [header, end_tag]
+
         tags_without_end = [tag for tag in tags if not isinstance(tag, GblEnd)]
         end_tag = create_end_tag_with_crc(tags_without_end)
         return tags_without_end + [end_tag]
@@ -348,7 +362,9 @@ class GblBuilder:
         """Get set of tag types"""
         return self.container.get_tag_types()
 
-    # Private helper methods (точно як у Kotlin)
+    # ===============================
+    # Private Helper Methods
+    # ===============================
 
     def _generate_encryption_init_tag_data(self, msg_len: int, nonce: int) -> bytes:
         """Generate encryption init tag data"""
