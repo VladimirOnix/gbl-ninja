@@ -1,4 +1,4 @@
-# GBL Python Library
+# GBL-Ninja Python Library
 
 A Python implementation for parsing and generating Silicon Labs GBL (Gecko Bootloader) files, converted from the original Kotlin GBL-Ninja library.
 
@@ -68,6 +68,49 @@ with open("output.gbl", "wb") as f:
 print(f"Created GBL file: {len(gbl_bytes)} bytes")
 ```
 
+## Examples
+
+The library includes comprehensive examples to help you get started:
+
+### Creating GBL Files (`examples/create_simple_gbl.py`)
+
+This example demonstrates how to create different types of GBL files:
+
+- **Simple GBL**: Basic firmware with application and programming data
+- **Advanced GBL**: Complex firmware with bootloader, certificates, signatures, and multiple programming sections
+- **Compressed GBL**: Firmware with LZ4 and LZMA compressed data sections
+
+Run the example:
+```bash
+python examples/create_simple_gbl.py
+```
+
+The script will create three example files:
+- `simple_firmware.gbl` - Basic structure with application and program data
+- `advanced_firmware.gbl` - Full-featured GBL with all tag types
+- `compressed_firmware.gbl` - Demonstrates compression features
+
+### Parsing GBL Files (`examples/parse_gbl_file.py`)
+
+This example shows how to:
+
+- Parse existing GBL files and analyze their structure
+- Examine individual tags and their properties
+- Verify file integrity with CRC checking
+- Compare multiple GBL files
+- Extract firmware data sections
+
+Run the example:
+```bash
+python examples/parse_gbl_file.py
+```
+
+Features demonstrated:
+- **Detailed tag analysis**: Shows content of each tag type
+- **Integrity verification**: CRC validation and file structure checks
+- **Firmware extraction**: Export programming data to binary files
+- **File comparison**: Side-by-side analysis of different GBL files
+
 ## Supported Tag Types
 
 | Tag Type             | Description                        |
@@ -121,6 +164,42 @@ builder.bootloader(
 builder.metadata(
     meta_data: bytes              # Metadata content
 )
+```
+
+### Compressed Programming Tags
+```python
+# LZ4 compressed data
+builder.prog_lz4(
+    flash_start_address: int,     # Flash start address
+    compressed_data: bytes,       # LZ4 compressed data
+    decompressed_size: int        # Original size
+)
+
+# LZMA compressed data
+builder.prog_lzma(
+    flash_start_address: int,     # Flash start address
+    compressed_data: bytes,       # LZMA compressed data
+    decompressed_size: int        # Original size
+)
+```
+
+### Security Tags
+```python
+# Add certificate
+certificate = ApplicationCertificate(
+    struct_version=1,
+    flags=0x02,
+    key=0x01,
+    version=0x10000,
+    signature=0xAB
+)
+builder.certificate_ecdsa_p256(certificate)
+
+# Add signature
+builder.signature_ecdsa_p256(r=0xCD, s=0xEF)
+
+# Add encryption initialization
+builder.encryption_init(msg_len=1024, nonce=0x42)
 ```
 
 ## Error Handling
@@ -185,6 +264,19 @@ with open("complete_firmware.gbl", "wb") as f:
 
 print(f"Created firmware file: {len(gbl_data)} bytes")
 ```
+
+## Getting Started
+
+1. **Clone the repository** and navigate to the library directory
+2. **Run the creation example** to generate sample GBL files:
+   ```bash
+   python examples/create_simple_gbl.py
+   ```
+3. **Run the parsing example** to analyze the generated files:
+   ```bash
+   python examples/parse_gbl_file.py
+   ```
+4. **Experiment** with the builder API to create your own firmware files
 
 ## Requirements
 
