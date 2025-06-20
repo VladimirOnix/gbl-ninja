@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBL File Parser & Builder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab active" data-tab="parser">📁 Parser</button>
+            <button class="tab" data-tab="builder">🔧 Builder</button>
+        </div>
+
+        <!-- Parser Tab -->
+        <div class="tab-content active" id="parser">
+            <h1>GBL Parser</h1>
+            <p class="subtitle">Upload your .gbl file for analysis</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drag file here</div>
+                <div class="upload-subtext">or click to select file (.gbl)</div>
+                <input type="file" class="file-input" id="fileInput" accept=".gbl">
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <div class="file-name" id="fileName"></div>
+                <div class="file-size" id="fileSize"></div>
+            </div>
+            
+            <button class="parse-btn" id="parseBtn">Parse File</button>
+            
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 15px; color: #666;">Processing file...</p>
+            </div>
+            
+            <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
+            
+            <div class="results" id="results">
+                <div class="results-title">Analysis Results</div>
+                
+                <div class="summary" id="summary">
+                    <div class="summary-title">General Information</div>
+                    <div class="summary-stats" id="summaryStats">
+                        <!-- Summary stats will be inserted here -->
+                    </div>
+                </div>
+                
+                <div class="tag-list" id="tagList">
+                    <!-- Tag information will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Builder Tab -->
+        <div class="tab-content" id="builder">
+            <h1>GBL Builder</h1>
+            <p class="subtitle">Create your own .gbl file</p>
+            
+            <div class="builder-layout">
+                <div class="tag-palette">
+                    <div class="palette-title">Available Tags</div>
+                    <div class="available-tags">
+                        <div class="draggable-tag" draggable="true" data-tag-type="APPLICATION">APPLICATION</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="BOOTLOADER">BOOTLOADER</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="METADATA">METADATA</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="PROG">PROG</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="PROG_LZ4">PROG_LZ4</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="PROG_LZMA">PROG_LZMA</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="ERASEPROG">ERASEPROG</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="SE_UPGRADE">SE_UPGRADE</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="ENCRYPTION_DATA">ENCRYPTION_DATA</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="ENCRYPTION_INIT">ENCRYPTION_INIT</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="SIGNATURE_ECDSA_P256">SIGNATURE_ECDSA_P256</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="CERTIFICATE_ECDSA_P256">CERTIFICATE_ECDSA_P256</div>
+                        <div class="draggable-tag" draggable="true" data-tag-type="VERSION_DEPENDENCY">VERSION_DEPENDENCY</div>
+                    </div>
+                </div>
+                
+                <div class="builder-area">
+                    <div class="builder-title">File Builder</div>
+                    <div class="tag-container" id="tagContainer">
+                        <div class="empty-container" id="emptyContainer">
+                            Drag tags here to create GBL file
+                        </div>
+                    </div>
+                    <button class="save-btn" id="saveBtn">💾 Save GBL File</button>
+                </div>
+            </div>
+            
+            <div class="error" id="builderError"></div>
+            <div class="success" id="builderSuccess"></div>
+        </div>
+    </div>
+
+    <!-- Tag Edit Modal -->
+    <div id="tagEditModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Edit Tag</div>
+                <div class="modal-subtitle" id="modalSubtitle">Configure tag parameters</div>
+            </div>
+            <form id="tagEditForm">
+                <div id="formFields">
+                    <!-- Form fields will be dynamically inserted here -->
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="modal-btn primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
