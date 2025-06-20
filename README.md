@@ -1,6 +1,6 @@
 # GBL-Ninja
 
-**GBL-Ninja** is a comprehensive toolkit for working with GBL (Gecko Bootloader) files used in Silicon Labs firmware updates.
+**GBL-Ninja** is a comprehensive toolkit for working with GBL (Gecko Bootloader) files.
 
 ## Project Structure
 
@@ -8,6 +8,7 @@ This repository contains:
 
 - **[kotlin-library/](kotlin-library/)** - Core Kotlin library for parsing and creating GBL files
 - **[python-library/](python-library/)** - Python implementation of the GBL library
+- **[javascript-library/](javascript-library/)** - JavaScript implementation with web interface
 - **[gbl-tool-cli/](gbl-tool-cli/)** - Command-line tool for GBL file manipulation
 
 ## Language Support
@@ -33,6 +34,13 @@ Python port of the Kotlin library with identical functionality.
 
 ```bash
 pip install gbl-ninja-python
+```
+
+### JavaScript Library
+Browser and Node.js compatible implementation with interactive web interface.
+
+```html
+<script src="gbl-library.js"></script>
 ```
 
 ## Quick Start
@@ -87,10 +95,32 @@ builder.prog(flash_start_address=0x1000, data=firmware_data)
 gbl_bytes = builder.build_to_byte_array()
 ```
 
+### JavaScript Example
+
+```javascript
+// Parse existing GBL file
+const gbl = new Gbl();
+const parseResult = gbl.parseByteArray(gblFileBytes);
+
+if (parseResult.type === 'Success') {
+    console.log(`Parsed ${parseResult.resultList.length} tags`);
+} else {
+    console.error(`Parse error: ${parseResult.error}`);
+}
+
+// Create new GBL file
+const builder = Gbl.GblBuilder.create()
+    .application(32, 0x10000, 0, 54)
+    .prog(0x1000, firmwareData);
+
+const gblBytes = builder.buildToByteArray();
+```
+
 ## Documentation
 
 - **[Kotlin Library Documentation](kotlin-library/README.md)** - Original Kotlin library
 - **[Python Library Documentation](python-library/README.md)** - Python implementation
+- **[JavaScript Library Documentation](javascript-library/README.md)** - JavaScript implementation with web interface
 - **[CLI Tool Documentation](gbl-tool-cli/README.md)** - Command-line interface
 
 ## About GBL Format
@@ -110,7 +140,9 @@ GBL (Gecko Bootloader) is a binary file format used for firmware updates on Sili
 - **Validate** file integrity with CRC checks
 - **Support** for compression (LZ4, LZMA)
 - **Security** features (ECDSA signatures, encryption)
-- **Multi-language** support (Kotlin, Python)
+- **Multi-language** support (Kotlin, Python, JavaScript)
+- **Web Interface** for interactive GBL file manipulation
+- **Cross-platform** compatibility (JVM, Python, Browser, Node.js)
 
 ## License
 
