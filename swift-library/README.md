@@ -22,7 +22,7 @@ Add the following to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/YourUsername/gbl-ninja-swift", from: "1.0.0")
+    .package(url: "https://github.com/VladimirOnix/gbl-ninja/tree/main/swift-library", from: "1.0.0")
 ]
 ```
 
