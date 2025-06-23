@@ -18,10 +18,7 @@ let package = Package(
             name: "swift-library"),
         .testTarget(
             name: "swift-libraryTests",
-            dependencies: ["swift-library"],
-            resources: [
-               .copy("n2k.gbl")
-           ]
+            dependencies: ["swift-library"]
         ),
     ]
 )
