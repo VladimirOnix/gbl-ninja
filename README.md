@@ -10,6 +10,7 @@ This repository contains:
 - **[python-library/](python-library/)** - Python implementation of the GBL library
 - **[javascript-library/](javascript-library/)** - JavaScript implementation with web interface
 - **[gbl-tool-cli/](gbl-tool-cli/)** - Command-line tool for GBL file manipulation
+- **[swift-library/](swift-library/)** - Swift port for Apple platform
 
 ## Language Support
 
@@ -41,6 +42,13 @@ Browser and Node.js compatible implementation with interactive web interface.
 
 ```html
 <script src="gbl-library.js"></script>
+```
+
+### Swift Library
+Swift port with basic support for parsing, creating, and modifying GBL files. SwiftPM-compatible.
+
+```swift
+.package(url: "https://github.com/VladimirOnix/gbl-ninja", branch: "main")
 ```
 
 ## Quick Start
@@ -116,12 +124,34 @@ const builder = Gbl.GblBuilder.create()
 const gblBytes = builder.buildToByteArray();
 ```
 
+### Swift Example
+
+```Swift
+let gbl = Gbl()
+let data: Data = ... // Load GBL file
+let result = gbl.parseByteArray(data)
+
+switch result {
+case .success(let tags):
+    print("Parsed \(tags.count) tags")
+case .fatal(let error):
+    print("Error: \(error?.localizedDescription ?? "unknown")")
+}
+
+let builder = Gbl.GblBuilder.create()
+    .application(type: 32, version: 0x10000)
+    .prog(flashStartAddress: 0x1000, data: firmwareData)
+
+let newFile = builder.buildToByteArray()
+```
+
 ## Documentation
 
 - **[Kotlin Library Documentation](kotlin-library/README.md)** - Original Kotlin library
 - **[Python Library Documentation](python-library/README.md)** - Python implementation
 - **[JavaScript Library Documentation](javascript-library/README.md)** - JavaScript implementation with web interface
 - **[CLI Tool Documentation](gbl-tool-cli/README.md)** - Command-line interface
+- **[Swift Library Documentation](swift-library/README.md)** - Swift implementation
 
 ## About GBL Format
 
